@@ -60,7 +60,7 @@ pub fn main() {
 
     // Create a context from a glutin window on non-wasm32 targets
     #[cfg(feature = "window-glutin")]
-    let (gl, event_loop, windowed_context, shader_version, render_loop) = {
+    let (gl, event_loop, windowed_context, shader_version) = {
         let el = glutin::event_loop::EventLoop::new();
         let wb = glutin::window::WindowBuilder::new()
             .with_title("Hello triangle!")
@@ -73,8 +73,8 @@ pub fn main() {
         let context = glow::Context::from_loader_function(|s| {
             windowed_context.get_proc_address(s) as *const _
         });
-        let render_loop = glow::RenderLoop::from_glutin_window(wb);
-        (context, el, windowed_context, "#version 410", render_loop)
+        // let render_loop = glow::RenderLoop::from_glutin_window(windowed_context);
+        (context, el, windowed_context, "#version 410")
     };
     
     // Create a context from a sdl2 window
