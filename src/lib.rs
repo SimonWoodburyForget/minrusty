@@ -1,4 +1,5 @@
 use glow::*;
+use specs::prelude::*;
 
 #[cfg(all(target_arch = "wasm32", feature = "web-sys"))]
 use wasm_bindgen::prelude::*;
@@ -12,12 +13,18 @@ use std_web::{
 #[cfg(all(target_arch = "wasm32", feature = "stdweb"))]
 use webgl_stdweb::WebGL2RenderingContext;
 
+mod components;
+mod systems;
+
 #[cfg_attr(all(target_arch = "wasm32", feature = "web-sys"), wasm_bindgen(start))]
 pub fn wasm_main() {
     main();
 }
 
 pub fn main() {
+
+    let world = World::new();
+    
     // Create a context from a WebGL2 context on wasm32 targets
     #[cfg(all(target_arch = "wasm32", feature = "web-sys"))]
     let (_window, gl, _events_loop, render_loop, shader_version) = {
@@ -146,8 +153,7 @@ pub fn main() {
     }
 
 
-    // We handle events differently between targets
-    
+
     #[cfg(feature = "window-glutin")]
     {
         use glutin::event::{Event, WindowEvent};
