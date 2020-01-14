@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 specs = "0.15"
+vek = "0.9"
 
 [dependencies.glow]
 version = "0.4"
