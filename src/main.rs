@@ -1,3 +1,5 @@
+use minrusty;
+
 fn main() {
-    println!("Hello, world!");
+    minrusty::main();
 }
