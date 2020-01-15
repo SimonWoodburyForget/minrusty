@@ -64,25 +64,6 @@ pub fn main() {
             "#version 300 es",
         )
     };
-
-    // Create a context from a glutin window on non-wasm32 targets
-    #[cfg(feature = "window-glutin")]
-    let (gl, event_loop, windowed_context, shader_version) = {
-        let el = glutin::event_loop::EventLoop::new();
-        let wb = glutin::window::WindowBuilder::new()
-            .with_title("Hello triangle!")
-            .with_inner_size(glutin::dpi::LogicalSize::new(1024.0, 768.0));
-        let windowed_context = glutin::ContextBuilder::new()
-            .with_vsync(true)
-            .build_windowed(wb, &el)
-            .unwrap();
-        let windowed_context = unsafe { windowed_context.make_current().unwrap() };
-        let context = glow::Context::from_loader_function(|s| {
-            windowed_context.get_proc_address(s) as *const _
-        });
-        // let render_loop = glow::RenderLoop::from_glutin_window(windowed_context);
-        (context, el, windowed_context, "#version 410")
-    };
     
     // Create a context from a sdl2 window
     #[cfg(feature = "window-sdl2")]
@@ -151,48 +132,6 @@ pub fn main() {
         gl.use_program(Some(program));
         gl.clear_color(0.1, 0.2, 0.3, 1.0);
     }
-
-
-
-    #[cfg(feature = "window-glutin")]
-    {
-        use glutin::event::{Event, WindowEvent};
-        use glutin::event_loop::ControlFlow;
-
-        event_loop.run(move |event, _, control_flow| {
-            *control_flow = ControlFlow::Wait;
-            match event {
-                Event::LoopDestroyed => {
-                    return;
-                }
-                Event::MainEventsCleared => {
-                    windowed_context.window().request_redraw();
-                }
-                Event::RedrawRequested(_) => {
-                    unsafe {
-                        gl.clear(glow::COLOR_BUFFER_BIT);
-                        gl.draw_arrays(glow::TRIANGLES, 0, 3);
-                    }
-                    windowed_context.swap_buffers().unwrap();
-                }
-                Event::WindowEvent { ref event, .. } => match event {
-                    WindowEvent::Resized(physical_size) => {
-                        windowed_context.resize(*physical_size);
-                    }
-                    WindowEvent::CloseRequested => {
-                        unsafe {
-                            gl.delete_program(program);
-                            gl.delete_vertex_array(vertex_array);
-                        }
-                        *control_flow = ControlFlow::Exit
-                    }
-                    _ => (),
-                },
-                _ => (),
-            }
-        });
-    }
-    
     
     #[cfg(not(feature = "window-glutin"))]
     render_loop.run(move |running: &mut bool| {

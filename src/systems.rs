@@ -1,7 +1,16 @@
 use crate::components::*;
+// use crate::resources::*;
 
-use specs::prelude::*;
-use glutin::window::Window;
+use specs::{
+    prelude::*,
+    shrev::EventChannel
+};
+
+use sdl2::{
+    Sdl,
+    EventPump,
+    event::Event,
+};
 
 pub struct RenderSystem;
 impl<'a> System<'a> for RenderSystem {
@@ -11,22 +20,27 @@ impl<'a> System<'a> for RenderSystem {
     }
 }
 
-#[derive(Default)]
-pub struct EventSystem {
-    reader: Option<ReaderId<Event>>,
-};
+pub struct EventSystem(EventPump);
+impl EventSystem {
+    pub fn new(sdl: Sdl) -> Self {
+        Self(sdl.event_pump().unwrap())
+    }
+}
 
 impl<'a> System<'a> for EventSystem {
-    type SystemData = (Read<'a, EventChannel>);
-    fn setup(&mut self, world: &mut World) {
-        Self::SystemData::setup(world);
-        self.reader = Some(
-            world.fetch_mut::<EventChannel<Event>>().register_reader()
-        );
-    }
+    type SystemData = (
+        // Write<'a, EventChannel<Event>>
+        // Write<'a, GameState>
+    );
     
     fn run(&mut self, data: Self::SystemData) {
-        // .. TODO
+        for event in self.0.poll_iter() {
+            match event {
+                Event::Quit { .. } => (),
+                _ => ()
+            }
+        }
+        // event_handler.drain_vec_write(events);
     }
 }
 
