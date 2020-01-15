@@ -15,6 +15,7 @@ use webgl_stdweb::WebGL2RenderingContext;
 
 mod components;
 mod systems;
+mod resources;
 
 #[cfg_attr(all(target_arch = "wasm32", feature = "web-sys"), wasm_bindgen(start))]
 pub fn wasm_main() {
