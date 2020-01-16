@@ -1,10 +1,11 @@
 use crate::components::*;
 use crate::resources::*;
+
+use std::mem;
+
 use glow::*;
-
-use specs::prelude::*;
-
 use sdl2::{event::Event, video::Window, EventPump, Sdl};
+use specs::prelude::*;
 
 // TODO: figure out whether implement or don't implement this.
 // /// Window system for SDL window... processing.
@@ -80,10 +81,43 @@ impl Program {
     }
 }
 
+pub struct VertexArray {
+    vao: u32,
+}
+
+impl VertexArray {
+    pub fn new(gl: &Context) -> Result<Self, String> {
+        #[rustfmt::skip]
+        let triangle: [f32; 9] = [
+            -0.5, -0.5, 0.0,
+             0.5, -0.5, 0.0,
+             0.0,  0.5, 0.0
+        ];
+
+        unsafe {
+            let vao = gl.create_vertex_array()?;
+            let vbo = gl.create_buffer()?;
+            gl.bind_vertex_array(Some(vbo));
+            gl.bind_buffer(glow::ARRAY_BUFFER, Some(vbo));
+            gl.buffer_data_u8_slice(
+                glow::ARRAY_BUFFER,
+                &triangle.align_to::<u8>().1,
+                glow::STATIC_DRAW,
+            );
+            {
+                let stride = 3 * mem::size_of::<f32>() as i32;
+                gl.vertex_attrib_pointer_f32(0, 3, glow::FLOAT, false, stride, 0);
+                gl.enable_vertex_attrib_array(0);
+            }
+            Ok(VertexArray { vao })
+        }
+    }
+}
+
 /// Render system for OpenGL graphics processing.
 pub struct RenderSystem {
     gl: Context,
-    va: u32,
+    va: VertexArray,
     pg: Program,
 }
 
@@ -95,6 +129,7 @@ impl RenderSystem {
             va
         };
 
+        let vertex_array = VertexArray::new(&gl)?;
         let program = Program::new(
             &gl,
             include_str!("shaders/vss.glsl"),
