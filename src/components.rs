@@ -1,5 +1,5 @@
 use specs::{Component, VecStorage};
-use vek::{Vec3};
+use vek::Vec3;
 
 pub struct Position(Vec3<f32>);
 impl Component for Position {

@@ -1,17 +1,12 @@
 use glow::*;
 use specs::prelude::*;
-use std::{
-    thread::sleep,
-    time::Duration,
-};
+use std::{thread::sleep, time::Duration};
 
-mod systems;
-mod resources;
 mod components;
+mod resources;
+mod systems;
 
-use systems::{
-    RenderSystem
-};
+use systems::RenderSystem;
 
 pub fn main() {
     // Create a context from a sdl2 window
@@ -22,7 +17,7 @@ pub fn main() {
         let gl_attr = video.gl_attr();
         gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
         gl_attr.set_context_version(3, 0);
-        
+
         let window = video
             .window("Hello triangle!", 1024, 769)
             .opengl()
@@ -37,19 +32,18 @@ pub fn main() {
         (context, event_loop, 0, "#version 410", gl_context, window)
     };
 
-
     let mut world = World::new();
     let mut dispatcher = DispatcherBuilder::new()
         .with_thread_local(RenderSystem::new(gl, shader_version))
         .build();
     dispatcher.setup(&mut world);
-    
+
     let mut running = true;
     while running {
         dispatcher.dispatch(&world);
         world.maintain();
-        
-        window.gl_swap_window();        
+
+        window.gl_swap_window();
         for event in events_loop.poll_iter() {
             match event {
                 sdl2::event::Event::Quit { .. } => running = false,

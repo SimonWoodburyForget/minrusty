@@ -2,17 +2,9 @@ use crate::components::*;
 use crate::resources::*;
 use glow::*;
 
-use specs::{
-    prelude::*,
-    // shrev::EventChannel
-};
+use specs::prelude::*;
 
-use sdl2::{
-    Sdl,
-    EventPump,
-    event::Event,
-    video::Window,
-};
+use sdl2::{event::Event, video::Window, EventPump, Sdl};
 
 // TODO: figure out whether implement or don't implement this.
 // /// Window system for SDL window... processing.
@@ -46,10 +38,11 @@ pub struct RenderSystem {
 }
 
 impl RenderSystem {
-    /// init gl shaders/programs/arrays/... 
     pub fn new(gl: Context, shader_version: &str) -> Self {
         let (vertex_array, program) = unsafe {
-            let va = gl.create_vertex_array().expect("Cannot create vertex array");
+            let va = gl
+                .create_vertex_array()
+                .expect("Cannot create vertex array");
             gl.bind_vertex_array(Some(va));
             let pg = gl.create_program().expect("Cannot create program");
             (va, pg)
@@ -59,34 +52,35 @@ impl RenderSystem {
             (glow::VERTEX_SHADER, include_str!("shaders/vss.glsl")),
             (glow::FRAGMENT_SHADER, include_str!("shaders/fss.glsl")),
         ];
-        
-        let mut shaders = Vec::with_capacity(shader_sources.len());
-        
-        for (shader_type, shader_source) in shader_sources.iter() {
-            unsafe {
-                let shader = gl.create_shader(*shader_type).expect("Cannot create shader");
-                gl.shader_source(shader, &format!("{}\n{}", shader_version, shader_source));
+
+        let shaders: Vec<_> = shader_sources
+            .iter()
+            .map(|(shader_type, shader_source)| unsafe {
+                let shader = gl
+                    .create_shader(*shader_type)
+                    .expect("Cannot create shader");
+                gl.shader_source(shader, shader_source);
                 gl.compile_shader(shader);
                 if !gl.get_shader_compile_status(shader) {
                     println!("{}", gl.get_shader_info_log(shader));
                     panic!(gl.get_shader_info_log(shader));
                 }
                 gl.attach_shader(program, shader);
-                shaders.push(shader);
-            }
-        }
+                shader
+            })
+            .collect();
 
         unsafe {
             gl.link_program(program);
             if !gl.get_program_link_status(program) {
                 panic!(gl.get_program_info_log(program));
             }
-            
+
             for shader in shaders {
                 gl.detach_shader(program, shader);
                 gl.delete_shader(shader);
             }
-            
+
             gl.use_program(Some(program));
             gl.clear_color(0.1, 0.2, 0.3, 1.0);
         }
@@ -114,19 +108,15 @@ impl<'a> System<'a> for RenderSystem {
 /// Event system for simple SDL event processing.
 pub struct EventSystem(pub EventPump);
 impl<'a> System<'a> for EventSystem {
-    type SystemData = (
-        // Write<'a, EventChannel<Event>>
-        Write<'a, Quit>
-    );
-    
+    type SystemData = (Write<'a, Quit>);
+
     fn run(&mut self, (mut quit): Self::SystemData) {
         for event in self.0.poll_iter() {
             match event {
                 Event::Quit { .. } => *quit = Quit(true),
-                _ => ()
+                _ => (),
             }
         }
         // event_handler.drain_vec_write(events);
     }
 }
-
