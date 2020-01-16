@@ -30,27 +30,19 @@ use sdl2::{event::Event, video::Window, EventPump, Sdl};
 //     }
 // }
 
-/// Render system for OpenGL graphics processing.
-pub struct RenderSystem {
-    gl: Context,
-    va: u32,
+/// Simple shader program.
+pub struct Program {
+    /// Shader Program
     pg: u32,
 }
 
-impl RenderSystem {
-    pub fn new(gl: Context, shader_version: &str) -> Self {
-        let (vertex_array, program) = unsafe {
-            let va = gl
-                .create_vertex_array()
-                .expect("Cannot create vertex array");
-            gl.bind_vertex_array(Some(va));
-            let pg = gl.create_program().expect("Cannot create program");
-            (va, pg)
-        };
-
+impl Program {
+    /// Create simple shader program, out of vertex and fragment glsl source.
+    pub fn new(gl: &Context, v_source: &str, f_source: &str) -> Result<Self, String> {
+        let pg = unsafe { gl.create_program() }?;
         let shader_sources = [
-            (glow::VERTEX_SHADER, include_str!("shaders/vss.glsl")),
-            (glow::FRAGMENT_SHADER, include_str!("shaders/fss.glsl")),
+            (glow::VERTEX_SHADER, v_source),
+            (glow::FRAGMENT_SHADER, f_source),
         ];
 
         let shaders: Vec<_> = shader_sources
@@ -62,34 +54,58 @@ impl RenderSystem {
                 gl.shader_source(shader, shader_source);
                 gl.compile_shader(shader);
                 if !gl.get_shader_compile_status(shader) {
-                    println!("{}", gl.get_shader_info_log(shader));
                     panic!(gl.get_shader_info_log(shader));
                 }
-                gl.attach_shader(program, shader);
+                gl.attach_shader(pg, shader);
                 shader
             })
             .collect();
 
         unsafe {
-            gl.link_program(program);
-            if !gl.get_program_link_status(program) {
-                panic!(gl.get_program_info_log(program));
+            gl.link_program(pg);
+            if !gl.get_program_link_status(pg) {
+                return Err(gl.get_program_info_log(pg));
             }
 
             for shader in shaders {
-                gl.detach_shader(program, shader);
+                gl.detach_shader(pg, shader);
                 gl.delete_shader(shader);
             }
 
-            gl.use_program(Some(program));
+            gl.use_program(Some(pg));
             gl.clear_color(0.1, 0.2, 0.3, 1.0);
         }
 
-        Self {
+        Ok(Program { pg })
+    }
+}
+
+/// Render system for OpenGL graphics processing.
+pub struct RenderSystem {
+    gl: Context,
+    va: u32,
+    pg: Program,
+}
+
+impl RenderSystem {
+    pub fn new(gl: Context, shader_version: &str) -> Result<Self, String> {
+        let vertex_array = unsafe {
+            let va = gl.create_vertex_array()?;
+            gl.bind_vertex_array(Some(va));
+            va
+        };
+
+        let program = Program::new(
+            &gl,
+            include_str!("shaders/vss.glsl"),
+            include_str!("shaders/fss.glsl"),
+        )?;
+
+        Ok(Self {
             gl: gl,
             va: vertex_array,
             pg: program,
-        }
+        })
     }
 }
 

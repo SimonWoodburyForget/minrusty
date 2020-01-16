@@ -34,7 +34,7 @@ pub fn main() {
 
     let mut world = World::new();
     let mut dispatcher = DispatcherBuilder::new()
-        .with_thread_local(RenderSystem::new(gl, shader_version))
+        .with_thread_local(RenderSystem::new(gl, shader_version).unwrap())
         .build();
     dispatcher.setup(&mut world);
 
