@@ -79,6 +79,10 @@ impl Program {
 
         Ok(Program { pg })
     }
+
+    pub unsafe fn use_program(&self, gl: &Context) {
+        gl.use_program(Some(self.pg));
+    }
 }
 
 pub struct VertexArray {
@@ -97,20 +101,26 @@ impl VertexArray {
         unsafe {
             let vao = gl.create_vertex_array()?;
             let vbo = gl.create_buffer()?;
-            gl.bind_vertex_array(Some(vbo));
+
+            gl.bind_vertex_array(Some(vao));
             gl.bind_buffer(glow::ARRAY_BUFFER, Some(vbo));
+
             gl.buffer_data_u8_slice(
                 glow::ARRAY_BUFFER,
                 &triangle.align_to::<u8>().1,
                 glow::STATIC_DRAW,
             );
-            {
-                let stride = 3 * mem::size_of::<f32>() as i32;
-                gl.vertex_attrib_pointer_f32(0, 3, glow::FLOAT, false, stride, 0);
-                gl.enable_vertex_attrib_array(0);
-            }
+
+            gl.enable_vertex_attrib_array(0);
+            let stride = 3 * mem::size_of::<f32>() as i32;
+            gl.vertex_attrib_pointer_f32(0, 3, glow::FLOAT, false, stride, 0);
+
             Ok(VertexArray { vao })
         }
+    }
+
+    pub unsafe fn bind_vertex_array(&self, gl: &Context) {
+        gl.bind_vertex_array(Some(self.vao));
     }
 }
 
@@ -151,6 +161,9 @@ impl<'a> System<'a> for RenderSystem {
         let RenderSystem { gl, pg, va } = self;
         unsafe {
             gl.clear(glow::COLOR_BUFFER_BIT);
+
+            pg.use_program(&gl);
+            va.bind_vertex_array(&gl);
             gl.draw_arrays(glow::TRIANGLES, 0, 3);
         }
     }
