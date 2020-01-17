@@ -101,17 +101,25 @@ impl VertexArray {
         let Self { vao, vbo, ebo } = unsafe { Self::create(&gl) }?;
 
         #[rustfmt::skip]
-        let square: [f32; 12] = [
+        let square: [f32; 18] = [
+            // first triangle
              0.5,  0.5, 0.0,  // top right
              0.5, -0.5, 0.0,  // bottom right
-            -0.5, -0.5, 0.0,  // bottom left
-            -0.5,  0.5, 0.0   // top left 
+            -0.5,  0.5, 0.0,  // top let 
+            // second triangle
+             0.5, -0.5, 0.0,  // bottom right
+            -0.5, -0.5, 0.0,  // bottom let
+            -0.5,  0.5, 0.0   // top left
+            //  0.5,  0.5, 0.0,  // top right
+            //  0.5, -0.5, 0.0,  // bottom right
+            // -0.5, -0.5, 0.0,  // bottom left
+            // -0.5,  0.5, 0.0   // top left 
         ];
 
         #[rustfmt::skip]
         let indices: [u8; 6] = [
-            0, 1, 3,
-            1, 2, 3,
+            0, 1, 3, // bottom triangle
+            1, 2, 3, // top triangle
         ];
 
         unsafe {
