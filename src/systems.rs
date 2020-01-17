@@ -97,6 +97,7 @@ pub struct VertexArray {
 }
 
 impl VertexArray {
+    /// Initializes vertex and index buffers from an OpenGL context.
     pub fn new(gl: &Context, vertices: &[f32], indices: &[u32]) -> Result<Self, String> {
         let Self { vao, vbo, ebo } = unsafe { Self::create(&gl) }?;
         unsafe {
