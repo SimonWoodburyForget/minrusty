@@ -32,28 +32,7 @@ use vek::Vec4;
 //     }
 // }
 
-// pub trait Uniform<T> {
-//     /// Set the uniform's value from name.
-//     pub unsafe fn uniform(&self, name: &str, value: T);
-// }
-
-// impl Uniform<f32> for Context {
-//     pub unsafe fn uniform(&self, location: &str, value: f32) {
-//         self.uniform_1_f32(name, value);
-//     }
-// }
-// impl UniformValue for f32 {
-//     pub unsafe fn as_uniform(&self, gl: &Context, name: &str) {
-//         gl.uniform_1_f32(self);
-//     }
-// }
-
-// impl UniformValue for [f32; 3] {
-//     pub unsafe fn as_uniform(&self, gl: &Context, name: &str) {
-//         gl.uniform_3_f32(self);
-//     }
-// }
-
+/// Trait for implementing generic type bindings to OpenGL function signatures.
 pub trait UniformSetter<T> {
     unsafe fn set_uniform(&self, gl: &Context, name: &str, value: T);
 }
