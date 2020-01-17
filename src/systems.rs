@@ -1,11 +1,12 @@
 use crate::components::*;
 use crate::resources::*;
 
-use std::mem;
+use std::{f32, mem};
 
 use glow::*;
 use sdl2::{event::Event, video::Window, EventPump, Sdl};
 use specs::prelude::*;
+use vek::Vec4;
 
 // TODO: figure out whether implement or don't implement this.
 // /// Window system for SDL window... processing.
@@ -31,15 +32,67 @@ use specs::prelude::*;
 //     }
 // }
 
+// pub trait Uniform<T> {
+//     /// Set the uniform's value from name.
+//     pub unsafe fn uniform(&self, name: &str, value: T);
+// }
+
+// impl Uniform<f32> for Context {
+//     pub unsafe fn uniform(&self, location: &str, value: f32) {
+//         self.uniform_1_f32(name, value);
+//     }
+// }
+// impl UniformValue for f32 {
+//     pub unsafe fn as_uniform(&self, gl: &Context, name: &str) {
+//         gl.uniform_1_f32(self);
+//     }
+// }
+
+// impl UniformValue for [f32; 3] {
+//     pub unsafe fn as_uniform(&self, gl: &Context, name: &str) {
+//         gl.uniform_3_f32(self);
+//     }
+// }
+
+pub trait UniformSetter<T> {
+    unsafe fn set_uniform(&self, gl: &Context, name: &str, value: T);
+}
+
+impl UniformSetter<f32> for Program {
+    unsafe fn set_uniform(&self, gl: &Context, name: &str, value: f32) {
+        gl.uniform_1_f32(gl.get_uniform_location(self.pg, name), value);
+    }
+}
+
+impl UniformSetter<Vec4<f32>> for Program {
+    unsafe fn set_uniform(&self, gl: &Context, name: &str, value: Vec4<f32>) {
+        gl.uniform_4_f32(
+            gl.get_uniform_location(self.pg, name),
+            value.x,
+            value.y,
+            value.z,
+            value.w,
+        );
+    }
+}
+
 /// Simple shader program.
 pub struct Program {
     /// Shader Program
     pg: u32,
+    // /// Cached uniform locations.
+    // uniforms: Vec<(&str, u32)>,
 }
 
 impl Program {
-    /// Create simple shader program, out of vertex and fragment glsl source.
-    pub fn new(gl: &Context, v_source: &str, f_source: &str) -> Result<Self, String> {
+    /// Create simple shader program, out of vertex and fragment source, with
+    /// their corresponding uniforms name.
+    pub fn new(
+        gl: &Context,
+        v_source: &str,
+        f_source: &str,
+        // uniforms: &[&str],
+    ) -> Result<Self, String> {
         let pg = unsafe { gl.create_program() }?;
         let shader_sources = [
             (glow::VERTEX_SHADER, v_source),
@@ -187,6 +240,7 @@ impl Square {
             gl.clear(glow::COLOR_BUFFER_BIT);
 
             pg.use_program(&gl);
+            pg.set_uniform(&gl, "ourColor", Vec4::new(0.0, 1.0, 0.0, 1.0));
             va.bind(&gl);
             // gl.draw_arrays(glow::TRIANGLES, 0, 6);
             gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
