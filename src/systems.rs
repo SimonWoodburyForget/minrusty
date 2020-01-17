@@ -97,36 +97,8 @@ pub struct VertexArray {
 }
 
 impl VertexArray {
-    pub fn new(gl: &Context) -> Result<Self, String> {
+    pub fn new(gl: &Context, vertices: &[f32], indices: &[u32]) -> Result<Self, String> {
         let Self { vao, vbo, ebo } = unsafe { Self::create(&gl) }?;
-
-        // #[rustfmt::skip]
-        // let vertices: [f32; 18] = [
-        //     // first triangle
-        //      0.5,  0.5, 0.0,  // top right
-        //      0.5, -0.5, 0.0,  // bottom right
-        //     -0.5,  0.5, 0.0,  // top let
-
-        //     // second triangle
-        //      0.5, -0.5, 0.0,  // bottom right
-        //     -0.5, -0.5, 0.0,  // bottom let
-        //     -0.5,  0.5, 0.0,  // top left
-        // ];
-
-        #[rustfmt::skip]
-        let vertices: [f32; 12] = [
-             0.5,  0.5, 0.0,  // top right
-             0.5, -0.5, 0.0,  // bottom right
-            -0.5,  0.5, 0.0,  // top left
-            -0.5, -0.5, 0.0,  // bottom left
-        ];
-
-        #[rustfmt::skip]
-        let indices: [u32; 6] = [
-            0, 1, 2, // top right triangle
-            2, 3, 1, // buttom left triangle
-        ];
-
         unsafe {
             gl.bind_vertex_array(Some(vao));
 
@@ -176,26 +148,63 @@ impl VertexArray {
     }
 }
 
-/// Render system for OpenGL graphics processing.
-pub struct RenderSystem {
-    gl: Context,
+/// A ..Square renderer
+pub struct Square {
     va: VertexArray,
     pg: Program,
 }
 
-impl RenderSystem {
-    pub fn new(gl: Context, shader_version: &str) -> Result<Self, String> {
-        let vertex_array = VertexArray::new(&gl)?;
-        let program = Program::new(
-            &gl,
-            include_str!("shaders/vss.glsl"),
-            include_str!("shaders/fss.glsl"),
-        )?;
+impl Square {
+    pub fn new(gl: &Context) -> Result<Self, String> {
+        #[rustfmt::skip]
+        let vertices: [f32; 12] = [
+             0.5,  0.5, 0.0,  // top right
+             0.5, -0.5, 0.0,  // bottom right
+            -0.5,  0.5, 0.0,  // top left
+            -0.5, -0.5, 0.0,  // bottom left
+        ];
+
+        #[rustfmt::skip]
+        let indices: [u32; 6] = [
+            0, 1, 2, // top right triangle
+            2, 3, 1, // buttom left triangle
+        ];
 
         Ok(Self {
+            va: VertexArray::new(&gl, &vertices, &indices)?,
+            pg: Program::new(
+                &gl,
+                include_str!("shaders/vss.glsl"),
+                include_str!("shaders/fss.glsl"),
+            )?,
+        })
+    }
+
+    pub fn draw(&self, gl: &Context) {
+        let Self { va, pg } = self;
+        unsafe {
+            gl.clear(glow::COLOR_BUFFER_BIT);
+
+            pg.use_program(&gl);
+            va.bind(&gl);
+            // gl.draw_arrays(glow::TRIANGLES, 0, 6);
+            gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
+            gl.bind_vertex_array(None);
+        }
+    }
+}
+
+/// Render system for OpenGL graphics processing.
+pub struct RenderSystem {
+    gl: Context,
+    square: Square,
+}
+
+impl RenderSystem {
+    pub fn new(gl: Context, shader_version: &str) -> Result<Self, String> {
+        Ok(Self {
+            square: Square::new(&gl)?,
             gl: gl,
-            va: vertex_array,
-            pg: program,
         })
     }
 }
@@ -204,16 +213,8 @@ impl<'a> System<'a> for RenderSystem {
     type SystemData = ();
 
     fn run(&mut self, (): Self::SystemData) {
-        let RenderSystem { gl, pg, va } = self;
-        unsafe {
-            gl.clear(glow::COLOR_BUFFER_BIT);
-
-            pg.use_program(&gl);
-            va.bind(&gl);
-            // gl.draw_arrays(glow::TRIANGLES, 0, 6);
-            gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
-            // gl.bind_vertex_array(None);
-        }
+        let RenderSystem { gl, square } = self;
+        square.draw(&gl);
     }
 }
 
