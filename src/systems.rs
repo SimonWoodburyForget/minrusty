@@ -122,7 +122,7 @@ impl VertexArray {
         ];
 
         #[rustfmt::skip]
-        let indices: [i32; 6] = [
+        let indices: [u32; 6] = [
             0, 1, 2, // top right triangle
             2, 3, 1, // buttom left triangle
         ];
