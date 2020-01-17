@@ -98,64 +98,65 @@ pub struct VertexArray {
 
 impl VertexArray {
     pub fn new(gl: &Context) -> Result<Self, String> {
+        let Self { vao, vbo, ebo } = unsafe { Self::create(&gl) }?;
+
         #[rustfmt::skip]
-        let triangle: [f32; 9] = [
-            -0.5, -0.5, 0.0,
-             0.5, -0.5, 0.0,
-             0.0,  0.5, 0.0
+        let square: [f32; 12] = [
+             0.5,  0.5, 0.0,  // top right
+             0.5, -0.5, 0.0,  // bottom right
+            -0.5, -0.5, 0.0,  // bottom left
+            -0.5,  0.5, 0.0   // top left 
         ];
 
-        let (vao, vbo) = unsafe {
-            let vao = gl.create_vertex_array()?;
-            let vbo = gl.create_buffer()?;
-
-            gl.bind_vertex_array(Some(vao));
-            gl.bind_buffer(glow::ARRAY_BUFFER, Some(vbo));
-
-            gl.buffer_data_u8_slice(
-                glow::ARRAY_BUFFER,
-                &triangle.align_to::<u8>().1,
-                glow::STATIC_DRAW,
-            );
-
-            gl.enable_vertex_attrib_array(0);
-            let stride = 3 * mem::size_of::<f32>() as i32;
-            gl.vertex_attrib_pointer_f32(0, 3, glow::FLOAT, false, stride, 0);
-
-            (vao, vbo)
-        };
-
-        // Note:
-        //   This should probably be somewhere else?..
         #[rustfmt::skip]
         let indices: [u8; 6] = [
-            1, 1, 3,
+            0, 1, 3,
             1, 2, 3,
         ];
 
-        let ebo = unsafe {
-            let ebo = gl.create_buffer()?;
-
+        unsafe {
+            gl.bind_vertex_array(Some(vao));
+            gl.bind_buffer(glow::ARRAY_BUFFER, Some(vbo));
             gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(ebo));
+
+            gl.buffer_data_u8_slice(
+                glow::ARRAY_BUFFER,
+                &square.align_to::<u8>().1,
+                glow::STATIC_DRAW,
+            );
+
             gl.buffer_data_u8_slice(
                 glow::ELEMENT_ARRAY_BUFFER,
                 &indices.align_to::<u8>().1,
                 glow::STATIC_DRAW,
             );
 
-            ebo
+            let stride = 3 * mem::size_of::<f32>() as i32;
+            gl.vertex_attrib_pointer_f32(0, 3, glow::FLOAT, false, stride, 0);
+            gl.enable_vertex_attrib_array(0);
         };
 
         Ok(Self { vao, vbo, ebo })
     }
 
-    pub unsafe fn bind(&self, gl: &Context) {
-        gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(self.ebo));
+    pub unsafe fn create(gl: &Context) -> Result<Self, String> {
+        Ok(Self {
+            vao: gl.create_vertex_array()?,
+            vbo: gl.create_buffer()?,
+            ebo: gl.create_buffer()?,
+        })
     }
 
-    /// TODO
+    pub unsafe fn bind(&self, gl: &Context) {
+        gl.bind_vertex_array(Some(self.vao));
+        // gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(self.ebo));
+        // gl.bind_buffer(glow::ARRAY_BUFFER, Some(self.vbo));
+    }
+
     pub unsafe fn delete(&self, gl: &Context) {
-        unimplemented!();
+        gl.delete_vertex_array(self.vao);
+        gl.delete_buffer(self.vbo);
+        gl.delete_buffer(self.ebo);
     }
 }
 
@@ -168,12 +169,6 @@ pub struct RenderSystem {
 
 impl RenderSystem {
     pub fn new(gl: Context, shader_version: &str) -> Result<Self, String> {
-        let vertex_array = unsafe {
-            let va = gl.create_vertex_array()?;
-            gl.bind_vertex_array(Some(va));
-            va
-        };
-
         let vertex_array = VertexArray::new(&gl)?;
         let program = Program::new(
             &gl,
@@ -199,7 +194,9 @@ impl<'a> System<'a> for RenderSystem {
 
             pg.use_program(&gl);
             va.bind(&gl);
-            gl.draw_arrays(glow::TRIANGLES, 0, 3);
+            gl.draw_arrays(glow::TRIANGLES, 0, 6);
+            // gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
+            // gl.bind_vertex_array(None);
         }
     }
 }
