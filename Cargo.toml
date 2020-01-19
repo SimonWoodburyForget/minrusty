@@ -3,7 +3,21 @@ name = "minrusty"
 version = "0.1.0"
 authors = ["Simon <simonwoodburyforget@gmail.com>"]
 edition = "2018"
+license = "GNUv3"
+repository = "https://github.com/SimonWoodburyForget/minrusty/"
+description = '''
+An experimental game development side project.
+'''
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+web = ["glow/web-sys", "winit/web-sys", "web-sys", "wasm-bindgen"]
+nat = ["glow/glutin"]
+
+################################################################
+# Native and Web Dependencies
 [dependencies]
 specs = "0.15"
 vek = "0.9"
@@ -12,17 +26,15 @@ vek = "0.9"
 version = "0.4"
 default-features = false
 
-[features]
-# default = ["web-sys"]
-web-sys = ["web_sys", "wasm-bindgen", "glow/web-sys"]
-# stdweb = ["std_web", "webgl_stdweb", "glow/stdweb"]
-window-sdl2 = ["sdl2", "glow/sdl2"]
+[dependencies.winit]
+version = "0.20"
 
-[target.'cfg(not(any(target_arch = "wasm32")))'.dependencies]
-sdl2 = { version = "0.32", optional = true }
+################################################################
+# Web Dependencies
+[dependencies.wasm-bindgen]
+version = "0.2"
+optional = true
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-web_sys = { version = "0.3", package = "web-sys", features=["console"], optional = true }
-wasm-bindgen = { version = "0.2", optional = true }
-# std_web  = { version = "0.4.18", package = "stdweb", optional = true }
-# webgl_stdweb = { version = "0.3", optional = true }
+[dependencies.web-sys]
+version = "0.3"
+optional = true
