@@ -76,6 +76,7 @@ impl Program {
                 gl.shader_source(shader, shader_source);
                 gl.compile_shader(shader);
                 if !gl.get_shader_compile_status(shader) {
+                    crate::log("Shader failed to compile.");
                     panic!(gl.get_shader_info_log(shader));
                 }
                 gl.attach_shader(pg, shader);
@@ -196,8 +197,8 @@ impl Square {
             va: VertexArray::new(&gl, &vertices, &indices)?,
             pg: Program::new(
                 &gl,
-                include_str!("shaders/vss.glsl"),
-                include_str!("shaders/fss.glsl"),
+                include_str!("shaders/vss-web.glsl"),
+                include_str!("shaders/fss-web.glsl"),
             )?,
         })
     }
@@ -232,11 +233,11 @@ impl RenderSystem {
     }
 }
 
-impl<'a> System<'a> for RenderSystem {
-    type SystemData = ();
+// impl<'a> System<'a> for RenderSystem {
+//     type SystemData = ();
 
-    fn run(&mut self, (): Self::SystemData) {
-        let RenderSystem { gl, square } = self;
-        square.draw(&gl);
-    }
-}
+//     fn run(&mut self, (): Self::SystemData) {
+//         let RenderSystem { gl, square } = self;
+//         square.draw(&gl);
+//     }
+// }
