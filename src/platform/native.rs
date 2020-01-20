@@ -2,11 +2,7 @@ use crate::platform::AsWindow;
 
 use glow::*;
 use glutin::{ContextWrapper, PossiblyCurrent};
-use winit::{
-    event::{Event, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::{Window, WindowBuilder},
-};
+use winit::{event_loop::EventLoop, window::Window};
 
 impl AsWindow for ContextWrapper<PossiblyCurrent, Window> {
     fn as_window(&self) -> &Window {
