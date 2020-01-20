@@ -3,6 +3,24 @@ use specs::prelude::*;
 use std::mem;
 use vek::Vec4;
 
+#[cfg(feature = "nat")]
+type ShaderId = u32;
+#[cfg(feature = "nat")]
+type ProgramId = u32;
+#[cfg(feature = "nat")]
+type BufferId = u32;
+#[cfg(feature = "nat")]
+type VertexArrayId = u32;
+
+#[cfg(feature = "web")]
+type ShaderId = WebShaderKey;
+#[cfg(feature = "web")]
+type ProgramId = WebProgramKey;
+#[cfg(feature = "web")]
+type BufferId = WebBufferKey;
+#[cfg(feature = "web")]
+type VertexArrayId = WebVertexArrayKey;
+
 /// Trait for implementing generic type bindings to OpenGL function signatures.
 pub trait UniformSetter<T> {
     unsafe fn set_uniform(&self, gl: &Context, name: &str, value: T);
@@ -29,7 +47,7 @@ impl UniformSetter<Vec4<f32>> for Program {
 /// Simple shader program.
 pub struct Program {
     /// Shader Program
-    pg: u32,
+    pg: ProgramId,
     // /// Cached uniform locations.
     // uniforms: Vec<(&str, u32)>,
 }
@@ -94,9 +112,9 @@ impl Program {
 }
 
 pub struct VertexArray {
-    vao: u32,
-    vbo: u32,
-    ebo: u32,
+    vao: VertexArrayId,
+    vbo: BufferId,
+    ebo: BufferId,
 }
 
 impl VertexArray {
