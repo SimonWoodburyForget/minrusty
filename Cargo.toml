@@ -14,7 +14,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 web = ["glow/web-sys", "winit/web-sys", "web-sys", "wasm-bindgen"]
-nat = ["glow/glutin"]
+nat = ["glow/glutin", "glutin"]
 
 ################################################################
 # Native and Web Dependencies
@@ -37,4 +37,10 @@ optional = true
 
 [dependencies.web-sys]
 version = "0.3"
+optional = true
+
+################################################################
+# Native Dependencies
+[dependencies.glutin]
+version = "0.22"
 optional = true

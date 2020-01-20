@@ -1,38 +1,24 @@
 #[cfg(feature = "web")]
-mod wasm;
+mod main_web;
+
+mod platform;
+use platform::*;
 
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
-    window::WindowBuilder,
+    window::{Window, WindowBuilder},
 };
 
 pub fn main() {
-    let event_loop = EventLoop::new();
-
-    let window = WindowBuilder::new()
-        .with_title("A fantastic window!")
-        .build(&event_loop)
-        .unwrap();
-
-    #[cfg(feature = "web")]
-    {
-        use winit::platform::web::WindowExtWebSys;
-
-        let canvas = window.canvas();
-
-        let window = web_sys::window().unwrap();
-        let document = window.document().unwrap();
-        let body = document.body().unwrap();
-
-        body.append_child(&canvas)
-            .expect("Append canvas to HTML body");
-    }
+    let (event_loop, context, window_context) = init();
 
     event_loop.run(move |event, _, control_flow| {
+        let window = window_context.as_window();
+
         *control_flow = ControlFlow::Wait;
 
-        // wasm::log(&format!("{:?}", event));
+        // main_web::log(&format!("{:?}", event));
 
         match event {
             Event::WindowEvent {
