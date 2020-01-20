@@ -27,7 +27,7 @@ pub fn log(x: &str) {
     #[cfg(feature = "web")]
     wasm::log(x);
     #[cfg(feature = "nat")]
-    println!(x);
+    println!("{}", x);
 }
 
 pub fn main() {

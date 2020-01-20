@@ -197,8 +197,8 @@ impl Square {
             va: VertexArray::new(&gl, &vertices, &indices)?,
             pg: Program::new(
                 &gl,
-                include_str!("shaders/vss-web.glsl"),
-                include_str!("shaders/fss-web.glsl"),
+                include_str!("shaders/vss.glsl"),
+                include_str!("shaders/fss.glsl"),
             )?,
         })
     }
