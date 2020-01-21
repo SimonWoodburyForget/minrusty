@@ -21,6 +21,27 @@ type BufferId = WebBufferKey;
 #[cfg(feature = "web")]
 type VertexArrayId = WebVertexArrayKey;
 
+pub enum RenderError {}
+
+/// Type for handling all GPU interactions.
+pub struct Renderer {
+    gl: Context,
+    square: Square,
+}
+
+impl Renderer {
+    pub fn new(gl: Context) -> Result<Self, String> {
+        Ok(Self {
+            square: Square::new(&gl)?,
+            gl: gl,
+        })
+    }
+
+    pub fn draw(&self) {
+        self.square.draw(&self.gl);
+    }
+}
+
 /// Trait for implementing generic type bindings to OpenGL function signatures.
 pub trait UniformSetter<T> {
     unsafe fn set_uniform(&self, gl: &Context, name: &str, value: T);
@@ -217,27 +238,3 @@ impl Square {
         }
     }
 }
-
-/// Render system for OpenGL graphics processing.
-pub struct RenderSystem {
-    gl: Context,
-    square: Square,
-}
-
-impl RenderSystem {
-    pub fn new(gl: Context) -> Result<Self, String> {
-        Ok(Self {
-            square: Square::new(&gl)?,
-            gl: gl,
-        })
-    }
-}
-
-// impl<'a> System<'a> for RenderSystem {
-//     type SystemData = ();
-
-//     fn run(&mut self, (): Self::SystemData) {
-//         let RenderSystem { gl, square } = self;
-//         square.draw(&gl);
-//     }
-// }
