@@ -36,3 +36,8 @@ pub fn init() -> (EventLoop<()>, Context, Window) {
 
     (event_loop, context, window)
 }
+
+// TODO:
+//   put css in page to handle canvas size
+//   set canvas.width to canvas.clientWidth
+//   set canvas.height to canvas.clientHeight

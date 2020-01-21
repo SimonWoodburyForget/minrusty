@@ -42,14 +42,18 @@ pub fn main() {
 
         *control_flow = ControlFlow::Wait;
 
-        // main_web::log(&format!("{:?}", event));
-
+        // log(&format!("{:?}", event));
         match event {
             Event::WindowEvent { ref event, .. } => match event {
                 WindowEvent::CloseRequested => {
                     // TODO: check window id?
                     *control_flow = ControlFlow::Exit;
                 }
+
+                WindowEvent::Resized(ref size) => {
+                    log(&format!("{:?}", size));
+                }
+
                 _ => (),
             },
             Event::MainEventsCleared => {
@@ -61,8 +65,6 @@ pub fn main() {
 
                 #[cfg(feature = "nat")]
                 {
-                    // FIXME: this needs to be moved into platform::native, and
-                    // drawing on web canvas probably doesn't work right now.
                     window_context.swap_buffers();
                 }
             }
