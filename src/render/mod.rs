@@ -1,39 +1,13 @@
-use crate::Error;
+mod error;
+mod types;
+
+pub use error::*;
+pub use types::*;
 
 use glow::*;
 use specs::prelude::*;
 use std::mem;
 use vek::Vec4;
-
-#[cfg(feature = "nat")]
-type ShaderId = u32;
-#[cfg(feature = "nat")]
-type ProgramId = u32;
-#[cfg(feature = "nat")]
-type BufferId = u32;
-#[cfg(feature = "nat")]
-type VertexArrayId = u32;
-
-#[cfg(feature = "web")]
-type ShaderId = WebShaderKey;
-#[cfg(feature = "web")]
-type ProgramId = WebProgramKey;
-#[cfg(feature = "web")]
-type BufferId = WebBufferKey;
-#[cfg(feature = "web")]
-type VertexArrayId = WebVertexArrayKey;
-
-#[derive(Clone, Debug)]
-pub enum RenderError {
-    /// A raw untyped message from OpenGL.
-    Message(String),
-}
-
-impl From<String> for RenderError {
-    fn from(err: String) -> Self {
-        RenderError::Message(err)
-    }
-}
 
 /// Type for handling all GPU interactions.
 pub struct Renderer {

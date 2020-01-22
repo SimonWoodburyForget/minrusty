@@ -2,7 +2,9 @@ mod error;
 #[cfg(feature = "web")]
 mod main_web;
 // mod platform;
+mod components;
 mod render;
+mod state;
 mod window;
 
 pub use error::Error;
@@ -27,6 +29,7 @@ pub fn log(x: &str) {
 }
 
 pub fn main() {
+    let game = state::GameState::new();
     let window = Window::new().unwrap();
     window.run();
 }

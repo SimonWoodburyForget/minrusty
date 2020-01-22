@@ -19,7 +19,8 @@ nat = ["glow/glutin", "glutin"]
 ################################################################
 # Native and Web Dependencies
 [dependencies]
-specs = "0.15"
+specs = { version = "0.15", features = ["specs-derive"] }
+specs-derive = "0.4.0"
 vek = "0.9"
 
 [dependencies.glow]
