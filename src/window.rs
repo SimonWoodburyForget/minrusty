@@ -99,14 +99,14 @@ impl Window {
             window,
         } = self;
 
-        #[cfg(feature = "nat")]
-        let window = windowed_context.window();
-
         #[cfg(feature = "web")]
         let canvas = window.canvas();
 
         event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Wait;
+
+            #[cfg(feature = "nat")]
+            let window = windowed_context.window();
 
             #[cfg(feature = "web")]
             {
