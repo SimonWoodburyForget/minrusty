@@ -14,6 +14,8 @@ use winit::event_loop::ControlFlow;
 pub struct Window {
     event_loop: winit::event_loop::EventLoop<()>,
     renderer: Renderer,
+
+    // glutin wants to wrap the entire window to do it's own things
     #[cfg(feature = "nat")]
     windowed_context: glutin::ContextWrapper<glutin::PossiblyCurrent, winit::window::Window>,
     #[cfg(feature = "web")]
@@ -22,9 +24,7 @@ pub struct Window {
 
 impl Window {
     pub fn new() -> Result<Self, Error> {
-        // Initialization difference between native and web is very large,
-        // short of ending at almost the same types.
-
+        // initialize a native context with glutin
         #[cfg(feature = "nat")]
         {
             let event_loop = glutin::event_loop::EventLoop::new();
@@ -50,6 +50,7 @@ impl Window {
             })
         }
 
+        // initialize a web context with web-sys
         #[cfg(feature = "web")]
         {
             let event_loop = winit::event_loop::EventLoop::new();
@@ -101,19 +102,28 @@ impl Window {
         #[cfg(feature = "nat")]
         let window = windowed_context.window();
 
+        #[cfg(feature = "web")]
+        let canvas = window.canvas();
+
         event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Wait;
+
+            #[cfg(feature = "web")]
+            {
+                let w = canvas.client_width();
+                let h = canvas.client_height();
+                // crate::log(&format!("{:?}", (w, h)));
+
+                // TODO:
+                // .. send resize event
+                // .. set gl viewport
+            }
 
             // TODO:
             // .. on redraw request
             // .. read render state
             // .. pass render state to rendering function
             // .. check window id?
-
-            // TODO:
-            // .. put css in page to handle canvas size
-            // .. set canvas.width to canvas.clientWidth
-            // .. set canvas.height to canvas.clientHeight
 
             use winit::event::Event::*;
             use winit::event::WindowEvent::*;
@@ -138,9 +148,12 @@ impl Window {
                     crate::log(&format!("{:?}", size));
                 }
 
+                MainEventsCleared => {
+                    window.request_redraw();
+                }
+
                 // TODO:
-                // .? Event::LoopDestroyed => return
-                // .? Event::MainEventsCleared => { .. }
+                // .? LoopDestroyed => return
                 _ => (),
             }
         });
