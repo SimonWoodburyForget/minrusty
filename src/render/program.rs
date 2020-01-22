@@ -1,12 +1,13 @@
 use crate::render::error::*;
 use crate::render::types::*;
+use crate::render::uniform::*;
 
 use glow::*;
 
 /// Simple shader program.
 pub struct Program {
     /// Shader Program
-    pub pg: ProgramId,
+    pg: ProgramId,
 }
 
 impl Program {
@@ -61,5 +62,10 @@ impl Program {
     /// TODO
     pub unsafe fn delete(&self, gl: &Context) {
         unimplemented!();
+    }
+
+    pub unsafe fn set_uniform<T: Uniform>(&self, gl: &Context, name: &str, value: T) {
+        // ..
+        value.set_as_uniform(gl, &self.pg, name);
     }
 }
