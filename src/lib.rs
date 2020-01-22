@@ -1,16 +1,12 @@
+mod error;
 #[cfg(feature = "web")]
 mod main_web;
-
-mod platform;
-use platform::*;
-
+// mod platform;
 mod render;
+mod window;
 
-use specs::prelude::*;
-use winit::{
-    event::{Event, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-};
+pub use error::Error;
+use window::Window;
 
 #[cfg(feature = "web")]
 mod wasm {
@@ -31,6 +27,6 @@ pub fn log(x: &str) {
 }
 
 pub fn main() {
-    let platform = Platform::new();
-    platform.run();
+    let window = Window::new().unwrap();
+    window.run();
 }

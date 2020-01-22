@@ -1,3 +1,5 @@
+use crate::Error;
+
 use glow::*;
 use specs::prelude::*;
 use std::mem;
@@ -21,7 +23,17 @@ type BufferId = WebBufferKey;
 #[cfg(feature = "web")]
 type VertexArrayId = WebVertexArrayKey;
 
-pub enum RenderError {}
+#[derive(Clone, Debug)]
+pub enum RenderError {
+    /// A raw untyped message from OpenGL.
+    Message(String),
+}
+
+impl From<String> for RenderError {
+    fn from(err: String) -> Self {
+        RenderError::Message(err)
+    }
+}
 
 /// Type for handling all GPU interactions.
 pub struct Renderer {
@@ -30,7 +42,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(gl: Context) -> Result<Self, String> {
+    pub fn new(gl: Context) -> Result<Self, RenderError> {
         Ok(Self {
             square: Square::new(&gl)?,
             gl: gl,
