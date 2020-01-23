@@ -13,9 +13,6 @@ pub use uniform::*;
 pub use vertex_array::*;
 
 use glow::*;
-use specs::prelude::*;
-use std::mem;
-use vek::Vec4;
 
 /// Type for handling all GPU operations.
 pub struct Renderer {
