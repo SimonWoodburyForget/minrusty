@@ -8,6 +8,8 @@ pub type ProgramId = u32;
 pub type BufferId = u32;
 #[cfg(feature = "nat")]
 pub type VertexArrayId = u32;
+#[cfg(feature = "nat")]
+pub type TextureId = u32;
 
 #[cfg(feature = "web")]
 pub type ShaderId = WebShaderKey;
@@ -17,3 +19,5 @@ pub type ProgramId = WebProgramKey;
 pub type BufferId = WebBufferKey;
 #[cfg(feature = "web")]
 pub type VertexArrayId = WebVertexArrayKey;
+#[cfg(feature = "web")]
+pub type TextureId = WebTextureKey;
