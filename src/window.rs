@@ -6,6 +6,7 @@ use wasm_bindgen::JsCast;
 #[cfg(feature = "web")]
 use winit::platform::web::WindowExtWebSys;
 
+use f32;
 use winit::event_loop::ControlFlow;
 
 // pub enum Event {}
@@ -102,6 +103,8 @@ impl Window {
         #[cfg(feature = "web")]
         let canvas = window.canvas();
 
+        let mut counter = 1.0;
+
         event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Wait;
 
@@ -135,7 +138,9 @@ impl Window {
                 } => *control_flow = ControlFlow::Exit,
 
                 RedrawRequested(_) => {
-                    renderer.draw();
+                    counter += 1.0;
+                    let green = (counter * 0.01_f32).sin();
+                    renderer.draw(green);
 
                     #[cfg(feature = "nat")]
                     windowed_context.swap_buffers().unwrap();

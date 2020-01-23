@@ -14,14 +14,20 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 web = ["glow/web-sys", "winit/web-sys", "web-sys", "wasm-bindgen"]
-nat = ["glow/glutin", "glutin"]
+nat = ["glow/glutin", "glutin", "specs/parallel"]
 
 ################################################################
 # Native and Web Dependencies
 [dependencies]
-specs = { version = "0.15", features = ["specs-derive"] }
 specs-derive = "0.4.0"
 vek = "0.9"
+
+[dependencies.specs]
+version = "0.15"
+features = ["specs-derive"]
+
+# remove parallel feature for Wasm target
+default-features = false
 
 [dependencies.glow]
 version = "0.4"

@@ -27,8 +27,8 @@ impl Renderer {
         })
     }
 
-    pub fn draw(&self) {
-        self.square.draw(&self.gl);
+    pub fn draw(&self, green: f32) {
+        self.square.draw(&self.gl, green);
     }
 }
 
@@ -123,13 +123,13 @@ impl Square {
         })
     }
 
-    pub fn draw(&self, gl: &Context) {
+    pub fn draw(&self, gl: &Context, green: f32) {
         let Self { va, pg } = self;
         unsafe {
             gl.clear(glow::COLOR_BUFFER_BIT);
 
             pg.use_program(&gl);
-            pg.set_uniform(&gl, "ourColor", Vec4::new(0.0, 1.0, 0.0, 1.0));
+            pg.set_uniform(&gl, "ourColor", Vec4::new(0.0, green, 0.0, 1.0));
             va.bind(&gl);
             // gl.draw_arrays(glow::TRIANGLES, 0, 6);
             gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
