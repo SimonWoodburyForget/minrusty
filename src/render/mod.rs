@@ -1,3 +1,5 @@
+//! This module contains thin OpenGL wrappers for rendering data.
+
 mod error;
 mod program;
 mod types;
@@ -13,7 +15,7 @@ use specs::prelude::*;
 use std::mem;
 use vek::Vec4;
 
-/// Type for handling all GPU interactions.
+/// Type for handling all GPU operations.
 pub struct Renderer {
     gl: Context,
     square: Square,
@@ -40,7 +42,12 @@ pub struct VertexArray {
 
 impl VertexArray {
     /// Initializes vertex and index buffers from an OpenGL context.
-    pub fn new(gl: &Context, vertices: &[f32], indices: &[u32]) -> Result<Self, String> {
+    pub fn new(
+        gl: &Context,
+        vertices: &[f32],
+        indices: &[u32],
+        vstride: i32,
+    ) -> Result<Self, String> {
         let Self { vao, vbo, ebo } = unsafe { Self::create(&gl) }?;
         unsafe {
             gl.bind_vertex_array(Some(vao));
@@ -59,11 +66,14 @@ impl VertexArray {
                 glow::STATIC_DRAW,
             );
 
-            let stride = 3 * mem::size_of::<f32>() as i32;
+            let stride = 6 * mem::size_of::<f32>() as i32;
             gl.vertex_attrib_pointer_f32(0, 3, glow::FLOAT, false, stride, 0);
             gl.enable_vertex_attrib_array(0);
 
-            // gl.bind_buffer(glow::ARRAY_BUFFER, None);
+            let start = vstride * mem::size_of::<f32>() as i32;
+            gl.vertex_attrib_pointer_f32(1, 3, glow::FLOAT, false, stride, start);
+            gl.enable_vertex_attrib_array(1);
+
             gl.bind_vertex_array(None);
         };
 
@@ -99,12 +109,17 @@ pub struct Square {
 
 impl Square {
     pub fn new(gl: &Context) -> Result<Self, String> {
+        // TODO:
+        // - this is pretty unsound
+
+        let vstride = 3;
+
         #[rustfmt::skip]
-        let vertices: [f32; 12] = [
-             0.5,  0.5, 0.0,  // top right
-             0.5, -0.5, 0.0,  // bottom right
-            -0.5,  0.5, 0.0,  // top left
-            -0.5, -0.5, 0.0,  // bottom left
+        let vertices: [f32; 24] = [
+             0.5,  0.5, 0.0,   1.0, 0.0, 0.0, // top right
+             0.5, -0.5, 0.0,   0.0, 1.0, 0.0, // bottom right
+            -0.5,  0.5, 0.0,   0.0, 0.0, 1.0, // top left
+            -0.5, -0.5, 0.0,   1.0, 1.0, 0.0, // bottom left
         ];
 
         #[rustfmt::skip]
@@ -114,7 +129,7 @@ impl Square {
         ];
 
         Ok(Self {
-            va: VertexArray::new(&gl, &vertices, &indices)?,
+            va: VertexArray::new(&gl, &vertices, &indices, vstride)?,
             pg: Program::new(
                 &gl,
                 include_str!("shaders/vss.glsl"),
@@ -129,7 +144,7 @@ impl Square {
             gl.clear(glow::COLOR_BUFFER_BIT);
 
             pg.use_program(&gl);
-            pg.set_uniform(&gl, "ourColor", Vec4::new(0.0, green, 0.0, 1.0));
+            // pg.set_uniform(&gl, "ourColor", Vec4::new(0.0, green, 0.0, 1.0));
             va.bind(&gl);
             // gl.draw_arrays(glow::TRIANGLES, 0, 6);
             gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);

@@ -1,9 +1,10 @@
 #version 300 es
 in vec3 aPos;
+in vec3 aColor; 
 
-out vec4 vertexColor; 
+out vec3 vertexColor; 
 
 void main() {
   gl_Position = vec4(aPos, 1.0);
-  vertexColor = vec4(aPos, 1.0);
+  vertexColor = aColor;
 }
