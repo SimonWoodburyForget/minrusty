@@ -2,7 +2,7 @@ use crate::render::program::Program;
 use crate::render::types::ProgramId;
 
 use glow::*;
-use vek::{Vec3, Vec4};
+use vek::{Mat4, Vec3, Vec4};
 
 /// Trait for values to be used as uniforms. This exists mostly as a simple wrapper
 /// to match function signatures to their corresponding types.
@@ -30,6 +30,16 @@ impl Uniform for Vec4<f32> {
             self.y,
             self.z,
             self.w,
+        );
+    }
+}
+
+impl Uniform for Mat4<f32> {
+    unsafe fn set_as_uniform(&self, gl: &Context, pg: &ProgramId, name: &str) {
+        gl.uniform_matrix_4_f32_slice(
+            gl.get_uniform_location(*pg, name),
+            false,
+            &self.into_row_array(),
         );
     }
 }

@@ -18,6 +18,7 @@ use image::io::Reader;
 use image::DynamicImage;
 use image::ImageFormat;
 use std::io::Cursor;
+use vek::Mat4;
 
 /// Type for handling all GPU operations.
 pub struct Renderer {
@@ -102,15 +103,14 @@ pub struct Square {
 
 impl Square {
     pub fn new(gl: &Context) -> Result<Self, RenderError> {
-        // TODO:
-        // - this is pretty unsound
-
         let raw_data = include_bytes!("../../assets/core-shard.png");
         let mut reader = Reader::new(Cursor::new(raw_data.as_ref()))
             .with_guessed_format()
             .expect("Cursor io never fails!");
         let image = reader.decode().unwrap();
 
+        // TODO:
+        // - this is pretty unsound
         #[rustfmt::skip]
         let vertices: [f32; 32] = [
              // pos            // col           // tex
@@ -142,8 +142,12 @@ impl Square {
         unsafe {
             gl.clear(glow::COLOR_BUFFER_BIT);
 
+            let mut m = Mat4::identity();
+            m.scale_3d(green);
+
             pg.use_program(&gl);
             // pg.set_uniform(&gl, "ourColor", Vec4::new(0.0, green, 0.0, 1.0));
+            pg.set_uniform(&gl, "transform", m);
             tx.bind(&gl);
             va.bind(&gl);
             // gl.draw_arrays(glow::TRIANGLES, 0, 6);
