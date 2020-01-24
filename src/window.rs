@@ -106,7 +106,7 @@ impl Window {
         let mut counter = 1.0;
 
         event_loop.run(move |event, _, control_flow| {
-            *control_flow = ControlFlow::Wait;
+            *control_flow = ControlFlow::Poll;
 
             #[cfg(feature = "nat")]
             let window = windowed_context.window();
@@ -154,6 +154,7 @@ impl Window {
                 }
 
                 MainEventsCleared => {
+                    crate::log(&format!("cleared!"));
                     window.request_redraw();
                 }
 
