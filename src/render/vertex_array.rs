@@ -42,7 +42,7 @@ impl VertexArray {
             gl.enable_vertex_attrib_array(1);
 
             let offset = 6 * mem::size_of::<f32>() as i32;
-            gl.vertex_attrib_pointer_f32(2, 3, glow::FLOAT, false, strides, offset);
+            gl.vertex_attrib_pointer_f32(2, 2, glow::FLOAT, false, strides, offset);
             gl.enable_vertex_attrib_array(2);
 
             gl.bind_vertex_array(None);
