@@ -12,12 +12,7 @@ pub struct VertexArray {
 
 impl VertexArray {
     /// Initializes vertex and index buffers from an OpenGL context.
-    pub fn new(
-        gl: &Context,
-        vertices: &[f32],
-        indices: &[u32],
-        vstride: i32,
-    ) -> Result<Self, String> {
+    pub fn new(gl: &Context, vertices: &[f32], indices: &[u32]) -> Result<Self, String> {
         let Self { vao, vbo, ebo } = unsafe { Self::create(&gl) }?;
         unsafe {
             gl.bind_vertex_array(Some(vao));
@@ -36,13 +31,19 @@ impl VertexArray {
                 glow::STATIC_DRAW,
             );
 
-            let stride = 6 * mem::size_of::<f32>() as i32;
-            gl.vertex_attrib_pointer_f32(0, 3, glow::FLOAT, false, stride, 0);
+            let strides = 8 * mem::size_of::<f32>() as i32;
+
+            let offset = 0;
+            gl.vertex_attrib_pointer_f32(0, 3, glow::FLOAT, false, strides, offset);
             gl.enable_vertex_attrib_array(0);
 
-            let start = vstride * mem::size_of::<f32>() as i32;
-            gl.vertex_attrib_pointer_f32(1, 3, glow::FLOAT, false, stride, start);
+            let offset = 3 * mem::size_of::<f32>() as i32;
+            gl.vertex_attrib_pointer_f32(1, 3, glow::FLOAT, false, strides, offset);
             gl.enable_vertex_attrib_array(1);
+
+            let offset = 6 * mem::size_of::<f32>() as i32;
+            gl.vertex_attrib_pointer_f32(2, 3, glow::FLOAT, false, strides, offset);
+            gl.enable_vertex_attrib_array(2);
 
             gl.bind_vertex_array(None);
         };
