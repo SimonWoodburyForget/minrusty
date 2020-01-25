@@ -69,13 +69,13 @@ impl Renderer {
         })
     }
 
-    pub fn draw(&self, green: f32) {
+    pub fn draw(&self, scale: f32) {
         let Self { va, pg, tx, gl } = self;
         unsafe {
             gl.clear(glow::COLOR_BUFFER_BIT);
 
             let mut m = Mat4::identity();
-            m.scale_3d(green);
+            m.scale_3d(scale);
 
             pg.use_program(&gl);
             // pg.set_uniform(&gl, "ourColor", Vec4::new(0.0, green, 0.0, 1.0));
