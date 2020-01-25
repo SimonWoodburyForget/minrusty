@@ -25,32 +25,14 @@ use vek::Mat4;
 /// Type for handling all GPU operations.
 pub struct Renderer {
     gl: Context,
-    square: Square,
-}
 
-impl Renderer {
-    pub fn new(gl: Context) -> Result<Self, RenderError> {
-        // loading image at compile time, because we can
-        Ok(Self {
-            square: Square::new(&gl)?,
-            gl: gl,
-        })
-    }
-
-    pub fn draw(&self, green: f32) {
-        self.square.draw(&self.gl, green);
-    }
-}
-
-/// A ..Square renderer
-pub struct Square {
     tx: Texture,
     va: VertexArray,
     pg: Program,
 }
 
-impl Square {
-    pub fn new(gl: &Context) -> Result<Self, RenderError> {
+impl Renderer {
+    pub fn new(gl: Context) -> Result<Self, RenderError> {
         let raw_data = include_bytes!("../../assets/core-shard.png");
         let mut reader = Reader::new(Cursor::new(raw_data.as_ref()))
             .with_guessed_format()
@@ -82,11 +64,13 @@ impl Square {
                 include_str!("shaders/vss.glsl"),
                 include_str!("shaders/fss.glsl"),
             )?,
+
+            gl: gl,
         })
     }
 
-    pub fn draw(&self, gl: &Context, green: f32) {
-        let Self { va, pg, tx } = self;
+    pub fn draw(&self, green: f32) {
+        let Self { va, pg, tx, gl } = self;
         unsafe {
             gl.clear(glow::COLOR_BUFFER_BIT);
 
