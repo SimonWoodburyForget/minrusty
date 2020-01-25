@@ -14,8 +14,8 @@ impl Default for GameStart {
     }
 }
 
-/// Rendered state of the game.
-#[derive(Default, Copy, Clone)]
+/// Game render resource.
+#[derive(Default)]
 pub struct GameRender {
     /// Seconds feed through a sin function.
     pub sin_wave: f32,
@@ -41,7 +41,7 @@ impl<'a> System<'a> for RenderSystem {
 }
 
 pub struct GameState {
-    ecs: World,
+    pub ecs: World,
     dis: Dispatcher<'static, 'static>,
 
     /// Last update instant.
@@ -72,14 +72,9 @@ impl GameState {
             let mut dt = self.ecs.write_resource::<DeltaTime>();
             *dt = DeltaTime(duration);
         }
-        crate::log(&format!("{}", duration.as_nanos()));
-
         self.last = now;
+
         self.dis.dispatch(&self.ecs);
         self.ecs.maintain();
-    }
-
-    pub fn render(&self) -> GameRender {
-        *self.ecs.read_resource::<GameRender>()
     }
 }

@@ -1,14 +1,14 @@
 use crate::render::Renderer;
-use crate::state;
+use crate::state::{GameRender, GameState};
 use crate::Error;
+
+use specs::prelude::*;
+use winit::event_loop::ControlFlow;
 
 #[cfg(feature = "web")]
 use wasm_bindgen::JsCast;
 #[cfg(feature = "web")]
 use winit::platform::web::WindowExtWebSys;
-
-use f32;
-use winit::event_loop::ControlFlow;
 
 // pub enum Event {}
 
@@ -91,7 +91,7 @@ impl Window {
         }
     }
 
-    pub fn run(self, mut gs: state::GameState) {
+    pub fn run(self, mut gs: GameState) {
         let Self {
             event_loop,
             renderer,
@@ -103,8 +103,6 @@ impl Window {
 
         #[cfg(feature = "web")]
         let canvas = window.canvas();
-
-        let mut counter = 1.0;
 
         event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Poll;
@@ -141,7 +139,7 @@ impl Window {
                 } => *control_flow = ControlFlow::Exit,
 
                 RedrawRequested(_) => {
-                    let game_render = gs.render();
+                    let game_render = &*gs.ecs.read_resource::<GameRender>();
                     renderer.draw(game_render.sin_wave);
 
                     #[cfg(feature = "nat")]
