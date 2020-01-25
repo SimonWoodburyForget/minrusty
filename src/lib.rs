@@ -31,5 +31,5 @@ pub fn log(x: &str) {
 pub fn main() {
     let game = state::GameState::new();
     let window = Window::new().unwrap();
-    window.run();
+    window.run(game);
 }

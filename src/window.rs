@@ -1,4 +1,5 @@
 use crate::render::Renderer;
+use crate::state;
 use crate::Error;
 
 #[cfg(feature = "web")]
@@ -90,7 +91,7 @@ impl Window {
         }
     }
 
-    pub fn run(self) {
+    pub fn run(self, mut gs: state::GameState) {
         let Self {
             event_loop,
             renderer,
@@ -128,6 +129,8 @@ impl Window {
             // .. pass render state to rendering function
             // .. check window id?
 
+            gs.update();
+
             use winit::event::Event::*;
             use winit::event::WindowEvent::*;
 
@@ -138,9 +141,8 @@ impl Window {
                 } => *control_flow = ControlFlow::Exit,
 
                 RedrawRequested(_) => {
-                    counter += 1.0;
-                    let green = (counter * 0.01_f32).sin();
-                    renderer.draw(green);
+                    let game_render = gs.render();
+                    renderer.draw(game_render.sin_wave);
 
                     #[cfg(feature = "nat")]
                     windowed_context.swap_buffers().unwrap();
@@ -154,7 +156,7 @@ impl Window {
                 }
 
                 MainEventsCleared => {
-                    crate::log(&format!("cleared!"));
+                    // crate::log(&format!("cleared!"));
                     window.request_redraw();
                 }
 

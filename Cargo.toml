@@ -13,7 +13,7 @@ An experimental game development side project.
 crate-type = ["cdylib", "rlib"]
 
 [features]
-web = ["glow/web-sys", "winit/web-sys", "web-sys", "wasm-bindgen"]
+web = ["glow/web-sys", "winit/web-sys", "web-sys", "wasm-bindgen", "instant/wasm-bindgen"]
 nat = ["glow/glutin", "glutin", "specs/parallel"]
 
 ################################################################
@@ -46,6 +46,9 @@ optional = true
 [dependencies.web-sys]
 version = "0.3"
 optional = true
+
+[dependencies.instant]
+version = "0.1"
 
 ################################################################
 # Native Dependencies
