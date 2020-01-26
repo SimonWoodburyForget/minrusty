@@ -8,19 +8,19 @@ pub struct Texture {
     texture_id: TextureId,
     width: u32,
     height: u32,
-    size: u32,
+    depth: u32,
 }
 
 impl Texture {
     /// Creates a texture array for n-images of a specific size.
-    pub fn new(gl: &Context, width: u32, height: u32, size: u32) -> Result<Self, RenderError> {
+    pub fn new(gl: &Context, width: u32, height: u32, depth: u32) -> Result<Self, RenderError> {
         let texture_id = unsafe { gl.create_texture() }?;
 
         Ok(Self {
             texture_id,
             width,
             height,
-            size,
+            depth,
         })
     }
 
@@ -49,25 +49,27 @@ impl Texture {
             .flatten()
             .collect::<Vec<u8>>();
 
-        unsafe {
-            texture.bind(&gl);
-            gl.tex_image_3d(
-                glow::TEXTURE_2D_ARRAY,
-                0,
-                glow::RGBA as i32,
-                size.0 as i32,
-                size.1 as i32,
-                1,
-                0,
-                glow::RGBA,
-                glow::UNSIGNED_BYTE,
-                Some(&bytes.align_to::<u8>().1),
-            );
-            gl.generate_mipmap(glow::TEXTURE_2D_ARRAY);
-            texture.pixelated(&gl);
-        }
+        unsafe { texture.load(bytes) };
 
         Ok(texture)
+    }
+
+    unsafe fn load(&self, gl: &Context, data: &[u8]) {
+        texture.bind(&gl);
+        gl.tex_image_3d(
+            glow::TEXTURE_2D_ARRAY,
+            0,
+            glow::RGBA as i32,
+            self.width as i32,
+            self.height as i32,
+            self.depth,
+            0,
+            glow::RGBA,
+            glow::UNSIGNED_BYTE,
+            Some(&bytes.align_to::<u8>().1),
+        );
+        gl.generate_mipmap(glow::TEXTURE_2D_ARRAY);
+        texture.pixelated(&gl);
     }
 
     unsafe fn pixelated(&self, gl: &Context) {
