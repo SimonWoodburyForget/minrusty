@@ -56,16 +56,17 @@ impl Renderer {
             2, 3, 1, // buttom left triangle
         ];
 
+        let tx = Texture::from_images(&gl, &[image])?;
+
         Ok(Self {
             va: VertexArray::new(&gl, &vertices, &indices)?,
-            tx: Texture::new(&gl, image)?,
             pg: Program::new(
                 &gl,
                 include_str!("shaders/vss.glsl"),
                 include_str!("shaders/fss.glsl"),
             )?,
-
-            gl: gl,
+            tx,
+            gl,
         })
     }
 
