@@ -18,6 +18,7 @@ use glow::*;
 
 use image::io::Reader;
 use image::DynamicImage;
+use image::FilterType;
 use image::ImageFormat;
 use std::io::Cursor;
 use vek::Mat4;
@@ -31,13 +32,24 @@ pub struct Renderer {
     pg: Program,
 }
 
+fn load_bytes(bytes: &[u8]) -> DynamicImage {
+    let mut reader = Reader::new(Cursor::new(bytes.as_ref()))
+        .with_guessed_format()
+        .expect("Cursor io never fails!");
+    reader
+        .decode()
+        .unwrap()
+        // TODO:
+        // - handle images of varying sizes
+        .resize(32, 32, FilterType::Nearest)
+}
+
 impl Renderer {
     pub fn new(gl: Context) -> Result<Self, RenderError> {
-        let raw_data = include_bytes!("../../assets/core-shard.png");
-        let mut reader = Reader::new(Cursor::new(raw_data.as_ref()))
-            .with_guessed_format()
-            .expect("Cursor io never fails!");
-        let image = reader.decode().unwrap();
+        let images = [
+            load_bytes(include_bytes!("../../assets/core-shard.png")),
+            load_bytes(include_bytes!("../../assets/copper-wall.png")),
+        ];
 
         // TODO:
         // - this is pretty unsound
@@ -56,7 +68,7 @@ impl Renderer {
             2, 3, 1, // buttom left triangle
         ];
 
-        let tx = Texture::from_images(&gl, &[image])?;
+        let tx = Texture::from_images(&gl, &images)?;
 
         Ok(Self {
             va: VertexArray::new(&gl, &vertices, &indices)?,

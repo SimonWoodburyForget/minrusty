@@ -49,27 +49,27 @@ impl Texture {
             .flatten()
             .collect::<Vec<u8>>();
 
-        unsafe { texture.load(bytes) };
+        unsafe { texture.load(&gl, &bytes) };
 
         Ok(texture)
     }
 
     unsafe fn load(&self, gl: &Context, data: &[u8]) {
-        texture.bind(&gl);
+        self.bind(&gl);
         gl.tex_image_3d(
             glow::TEXTURE_2D_ARRAY,
             0,
             glow::RGBA as i32,
             self.width as i32,
             self.height as i32,
-            self.depth,
+            self.depth as i32,
             0,
             glow::RGBA,
             glow::UNSIGNED_BYTE,
-            Some(&bytes.align_to::<u8>().1),
+            Some(&data.align_to::<u8>().1),
         );
         gl.generate_mipmap(glow::TEXTURE_2D_ARRAY);
-        texture.pixelated(&gl);
+        self.pixelated(&gl);
     }
 
     unsafe fn pixelated(&self, gl: &Context) {
