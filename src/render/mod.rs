@@ -3,6 +3,7 @@
 //! It's a multi-platform module, meaning it's for the most part all going to be used
 //! on Web and Native targets, so we're targetting mostly OpenGL ES 3.0 features.
 
+mod buffer;
 mod error;
 mod program;
 mod texture;
@@ -10,6 +11,7 @@ mod types;
 mod uniform;
 mod vertex_array;
 
+pub use buffer::*;
 pub use error::*;
 pub use program::*;
 pub use texture::*;

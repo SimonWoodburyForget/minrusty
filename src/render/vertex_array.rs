@@ -1,5 +1,4 @@
-use crate::render::error::*;
-use crate::render::types::*;
+use super::*;
 
 use glow::*;
 use std::mem;
@@ -7,20 +6,13 @@ use std::mem;
 pub struct VertexArray {
     /// Vertex Array
     vao: VertexArrayId,
-
-    /// Vertex Buffer
-    vbo: BufferId,
-
-    /// Element Buffer
-    ebo: BufferId,
-
-    /// Instance Buffer
-    ibo: BufferId,
+    vertex_buffer: Buffer,
+    element_buffer: Buffer,
 }
 
 impl VertexArray {
     /// Initializes vertex and index buffers from an OpenGL context.
-    pub fn quad(gl: &Context) -> Result<Self, String> {
+    pub fn quad(gl: &Context) -> Result<Self, RenderError> {
         #[rustfmt::skip]
         let vertices: [f32; 32] = [
              // square 1 
@@ -30,32 +22,21 @@ impl VertexArray {
             -0.5,  0.5, 0.0,   0.0, 0.0, 1.0,   0.0,  1.0, // top left
             -0.5, -0.5, 0.0,   1.0, 1.0, 0.0,   0.0,  0.0, // bottom left
         ];
+        let vertex_buffer = Buffer::immutable(&gl, glow::ARRAY_BUFFER, &vertices)?;
 
         #[rustfmt::skip]
         let indices: [u32; 6] = [
             0, 1, 2, // top right triangle
             2, 3, 1, // buttom left triangle
         ];
+        let element_buffer = Buffer::immutable(&gl, glow::ELEMENT_ARRAY_BUFFER, &indices)?;
 
-        // let texture_indices: [u32; 2] = [0, 1];
-
-        let Self { vao, vbo, ebo, ibo } = unsafe { Self::create(&gl) }?;
-        unsafe {
+        let vao = unsafe {
+            let vao = gl.create_vertex_array()?;
             gl.bind_vertex_array(Some(vao));
 
-            gl.bind_buffer(glow::ARRAY_BUFFER, Some(vbo));
-            gl.buffer_data_u8_slice(
-                glow::ARRAY_BUFFER,
-                &vertices.align_to::<u8>().1,
-                glow::STATIC_DRAW,
-            );
-
-            gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(ebo));
-            gl.buffer_data_u8_slice(
-                glow::ELEMENT_ARRAY_BUFFER,
-                &indices.align_to::<u8>().1,
-                glow::STATIC_DRAW,
-            );
+            vertex_buffer.bind(&gl);
+            element_buffer.bind(&gl);
 
             let strides = 8 * mem::size_of::<f32>() as i32;
 
@@ -87,17 +68,13 @@ impl VertexArray {
 
             gl.bind_buffer(glow::ARRAY_BUFFER, None);
             gl.bind_vertex_array(None);
+            vao
         };
 
-        Ok(Self { vao, vbo, ebo, ibo })
-    }
-
-    pub unsafe fn create(gl: &Context) -> Result<Self, String> {
         Ok(Self {
-            vao: gl.create_vertex_array()?,
-            vbo: gl.create_buffer()?,
-            ebo: gl.create_buffer()?,
-            ibo: gl.create_buffer()?,
+            vao,
+            vertex_buffer,
+            element_buffer,
         })
     }
 
@@ -109,7 +86,7 @@ impl VertexArray {
 
     pub unsafe fn delete(&self, gl: &Context) {
         gl.delete_vertex_array(self.vao);
-        gl.delete_buffer(self.vbo);
-        gl.delete_buffer(self.ebo);
+        self.vertex_buffer.delete(&gl);
+        self.element_buffer.delete(&gl);
     }
 }
