@@ -5,7 +5,7 @@ use std::mem;
 
 pub struct VertexArray {
     /// Vertex Array
-    vao: VertexArrayId,
+    vao: Option<VertexArrayId>,
     vertex_buffer: Buffer,
     element_buffer: Buffer,
 }
@@ -31,45 +31,57 @@ impl VertexArray {
         ];
         let element_buffer = Buffer::immutable(&gl, glow::ELEMENT_ARRAY_BUFFER, &indices)?;
 
-        let vao = unsafe {
-            let vao = gl.create_vertex_array()?;
-            gl.bind_vertex_array(Some(vao));
+        struct VertexAttribute {
+            location: u32,
+            size: i32,
+            data_type: u32,
+        }
 
-            vertex_buffer.bind(&gl);
-            element_buffer.bind(&gl);
+        impl VertexAttribute {
+            fn new(location: u32, size: i32, data_type: u32) -> Self {
+                Self {
+                    location,
+                    size,
+                    data_type,
+                }
+            }
+        }
 
-            let strides = 8 * mem::size_of::<f32>() as i32;
+        let attrs: [VertexAttribute; 3] = [
+            VertexAttribute::new(0, 3, glow::FLOAT), // positon
+            VertexAttribute::new(1, 3, glow::FLOAT), // color
+            VertexAttribute::new(2, 2, glow::FLOAT), // texture
+        ];
 
-            let offset = 0;
-            gl.vertex_attrib_pointer_f32(0, 3, glow::FLOAT, false, strides, offset);
-            gl.enable_vertex_attrib_array(0);
+        let vao = Some(unsafe { gl.create_vertex_array()? });
+        unsafe { gl.bind_vertex_array(vao) };
 
-            let offset = 3 * mem::size_of::<f32>() as i32;
-            gl.vertex_attrib_pointer_f32(1, 3, glow::FLOAT, false, strides, offset);
-            gl.enable_vertex_attrib_array(1);
+        vertex_buffer.bind(&gl);
+        element_buffer.bind(&gl);
 
-            let offset = 6 * mem::size_of::<f32>() as i32;
-            gl.vertex_attrib_pointer_f32(2, 2, glow::FLOAT, false, strides, offset);
-            gl.enable_vertex_attrib_array(2);
+        let stride_count = attrs.iter().map(|a| a.size).sum::<i32>();
+        let stride_size = stride_count * unsafe { mem::size_of::<f32>() } as i32;
 
-            // // Texture identity data?
-            // gl.bind_buffer(glow::ARRAY_BUFFER, Some(ibo));
-            // gl.buffer_data_u8_slice(
-            //     glow::ARRAY_BUFFER,
-            //     &texture_indices.align_to::<u8>().1,
-            //     glow::STATIC_DRAW,
-            // );
-            // gl.vertex_attrib_divisor(3, 1);
+        let mut offset = 0;
+        for attr in attrs.iter() {
+            unsafe {
+                gl.vertex_attrib_pointer_f32(
+                    attr.location,
+                    attr.size,
+                    attr.data_type,
+                    false,
+                    stride_size,
+                    offset * mem::size_of::<f32>() as i32,
+                );
+                gl.enable_vertex_attrib_array(attr.location);
+            }
+            offset += attr.size;
+        }
 
-            // let offset = 0;
-            // let strides = 1 * mem::size_of::<i32>() as i32;
-            // gl.vertex_attrib_pointer_f32(3, 1, glow::UNSIGNED_INT, false, strides, offset);
-            // gl.enable_vertex_attrib_array(3);
-
+        unsafe {
             gl.bind_buffer(glow::ARRAY_BUFFER, None);
             gl.bind_vertex_array(None);
-            vao
-        };
+        }
 
         Ok(Self {
             vao,
@@ -79,13 +91,16 @@ impl VertexArray {
     }
 
     pub unsafe fn bind(&self, gl: &Context) {
-        gl.bind_vertex_array(Some(self.vao));
+        gl.bind_vertex_array(self.vao);
         // gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(self.ebo));
         // gl.bind_buffer(glow::ARRAY_BUFFER, Some(self.vbo));
     }
 
     pub unsafe fn delete(&self, gl: &Context) {
-        gl.delete_vertex_array(self.vao);
+        if let Some(vao) = self.vao {
+            gl.delete_vertex_array(vao);
+        }
+
         self.vertex_buffer.delete(&gl);
         self.element_buffer.delete(&gl);
     }
