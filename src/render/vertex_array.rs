@@ -37,7 +37,7 @@ impl VertexArray {
             2, 3, 1, // buttom left triangle
         ];
 
-        let texture_indices: [u32; 2] = [0, 1];
+        // let texture_indices: [u32; 2] = [0, 1];
 
         let Self { vao, vbo, ebo, ibo } = unsafe { Self::create(&gl) }?;
         unsafe {
