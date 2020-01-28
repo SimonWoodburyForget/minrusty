@@ -29,7 +29,10 @@ pub fn log(x: &str) {
 }
 
 pub fn main() {
-    let game = state::GameState::new();
+    let mut game = state::GameState::new();
+    game.create_block(0., 1., "wall");
+    game.create_block(1., 1., "core");
+
     let window = Window::new().unwrap();
     window.run(game);
 }

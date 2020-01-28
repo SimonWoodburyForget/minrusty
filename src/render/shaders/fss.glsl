@@ -5,10 +5,11 @@ out vec4 color;
 
 in vec3 vColor;
 in vec2 vTex;
+// flat in int texture_index;
 
 uniform sampler2DArray tex;
 
 void main() {
-  color = texture(tex, vec3(vTex, 1)) // * vec4(vColor, 1.0)
-    ;
+  /// no clue why this doesn't seem to do anything.
+  color = texture(tex, vec3(vTex, 2));
 }

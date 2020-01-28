@@ -1,4 +1,7 @@
-//! This module contains thin OpenGL wrappers for rendering data.
+//! This module contains the OpenGL rendering pipelines.
+//!
+//! It's a multi-platform module, meaning it's for the most part all going to be used
+//! on Web and Native targets, so we're targetting mostly OpenGL ES 3.0 features.
 
 mod error;
 mod program;
@@ -23,7 +26,7 @@ use image::ImageFormat;
 use std::io::Cursor;
 use vek::Mat4;
 
-/// Type for handling all GPU operations.
+/// Type which holds onto the OpenGL context, and the various objects that surrounds it.
 pub struct Renderer {
     gl: Context,
 
@@ -32,11 +35,11 @@ pub struct Renderer {
     pg: Program,
 }
 
+/// Loads an image from bytes, resizes it to 32x32 to avoid dealing with varying size images.
 fn load_bytes(bytes: &[u8]) -> DynamicImage {
-    let mut reader = Reader::new(Cursor::new(bytes.as_ref()))
+    Reader::new(Cursor::new(bytes.as_ref()))
         .with_guessed_format()
-        .expect("Cursor io never fails!");
-    reader
+        .expect("Cursor io never fails!")
         .decode()
         .unwrap()
         // TODO:
@@ -51,27 +54,10 @@ impl Renderer {
             load_bytes(include_bytes!("../../assets/copper-wall.png")),
         ];
 
-        // TODO:
-        // - this is pretty unsound
-        #[rustfmt::skip]
-        let vertices: [f32; 32] = [
-             // pos            // col           // tex
-             0.5,  0.5, 0.0,   1.0, 0.0, 0.0,   1.0,  1.0, // top right
-             0.5, -0.5, 0.0,   0.0, 1.0, 0.0,   1.0,  0.0, // bottom right
-            -0.5,  0.5, 0.0,   0.0, 0.0, 1.0,   0.0,  1.0, // top left
-            -0.5, -0.5, 0.0,   1.0, 1.0, 0.0,   0.0,  0.0, // bottom left
-        ];
-
-        #[rustfmt::skip]
-        let indices: [u32; 6] = [
-            0, 1, 2, // top right triangle
-            2, 3, 1, // buttom left triangle
-        ];
-
         let tx = Texture::from_images(&gl, &images)?;
 
         Ok(Self {
-            va: VertexArray::new(&gl, &vertices, &indices)?,
+            va: VertexArray::quad(&gl)?,
             pg: Program::new(
                 &gl,
                 include_str!("shaders/vss.glsl"),
@@ -96,6 +82,8 @@ impl Renderer {
             tx.bind(&gl);
             va.bind(&gl);
             // gl.draw_arrays(glow::TRIANGLES, 0, 6);
+            // gl.draw_elements_instanced(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0, 2000);
+
             gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
             gl.bind_vertex_array(None);
         }
