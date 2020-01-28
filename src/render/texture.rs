@@ -4,23 +4,36 @@ use super::types::TextureId;
 use glow::*;
 use image::DynamicImage;
 
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Texture {
-    texture_id: TextureId,
+    texture_id: Option<TextureId>,
     width: u32,
     height: u32,
     depth: u32,
+    slot: u32,
 }
 
 impl Texture {
+    pub fn empty() -> Self {
+        Self::default()
+    }
+
+    pub fn delete(&self, gl: &Context) {
+        if let Some(id) = self.texture_id {
+            unsafe { gl.delete_texture(id) }
+        }
+    }
+
     /// Creates a texture array for n-images of a specific size.
     pub fn new(gl: &Context, width: u32, height: u32, depth: u32) -> Result<Self, RenderError> {
-        let texture_id = unsafe { gl.create_texture() }?;
+        let texture_id = Some(unsafe { gl.create_texture()? });
 
         Ok(Self {
             texture_id,
             width,
             height,
             depth,
+            slot: 0,
         })
     }
 
@@ -88,8 +101,35 @@ impl Texture {
         gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_T, glow::REPEAT as i32);
     }
 
-    pub unsafe fn bind(&self, gl: &Context) {
-        gl.active_texture(glow::TEXTURE0);
-        gl.bind_texture(glow::TEXTURE_2D_ARRAY, Some(self.texture_id));
+    pub fn bind(&self, gl: &Context) {
+        unsafe {
+            gl.active_texture(glow::TEXTURE0 + self.slot);
+            gl.bind_texture(glow::TEXTURE_2D_ARRAY, self.texture_id);
+        }
+    }
+
+    pub fn update(&self, gl: &Context, bytes: &[u8]) {
+        assert_eq!(
+            self.width as usize * self.height as usize * self.depth as usize * 4,
+            bytes.len()
+        );
+
+        self.bind(&gl);
+
+        unsafe {
+            gl.tex_sub_image_3d_u8_slice(
+                glow::TEXTURE_2D_ARRAY,
+                0,
+                0,
+                0,
+                0,
+                self.width as _,
+                self.height as _,
+                self.depth as _,
+                glow::RGBA,
+                glow::UNSIGNED_BYTE,
+                Some(bytes),
+            );
+        }
     }
 }

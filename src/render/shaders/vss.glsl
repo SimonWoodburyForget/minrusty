@@ -5,6 +5,7 @@ in vec2 aTex;
 
 out vec3 vColor;
 out vec2 vTex;
+flat out int id;
 
 uniform mat4 transform;
 
@@ -12,4 +13,5 @@ void main() {
   gl_Position = transform * vec4(aPos, 1.0);
   vColor = aColor;
   vTex = aTex;
+  id = gl_InstanceID;
 }
