@@ -1,62 +1,63 @@
-use crate::render::error::*;
-use crate::render::types::*;
-use crate::render::uniform::*;
+use super::*;
 
 use glow::*;
 
 /// Simple shader program.
+#[derive(Clone, Debug, Default)]
 pub struct Program {
     /// Shader Program
-    pg: ProgramId,
+    program_id: Option<ProgramId>,
 }
 
 impl Program {
     /// Create simple shader program, out of vertex and fragment source, with
     /// their corresponding uniforms name.
-    pub fn new(gl: &Context, v_source: &str, f_source: &str) -> Result<Self, String> {
-        let pg = unsafe { gl.create_program() }?;
-        let shader_sources = [
-            (glow::VERTEX_SHADER, v_source),
-            (glow::FRAGMENT_SHADER, f_source),
+    pub fn new(gl: &Context, v_source: &str, f_source: &str) -> Result<Self, RenderError> {
+        let program_id = unsafe { gl.create_program() }?;
+        let mut shader_data = [
+            (glow::VERTEX_SHADER, v_source, None),
+            (glow::FRAGMENT_SHADER, f_source, None),
         ];
 
-        let shaders: Vec<_> = shader_sources
-            .iter()
-            .map(|(shader_type, shader_source)| unsafe {
-                let shader = gl
-                    .create_shader(*shader_type)
-                    .expect("Cannot create shader");
+        for (shader_type, shader_source, mut shader_id) in shader_data.iter_mut() {
+            unsafe {
+                let shader = gl.create_shader(*shader_type)?;
+                shader_id = Some(shader);
                 gl.shader_source(shader, shader_source);
                 gl.compile_shader(shader);
                 if !gl.get_shader_compile_status(shader) {
                     crate::log("Shader failed to compile.");
-                    panic!(gl.get_shader_info_log(shader));
+                    return Err(RenderError::from(gl.get_shader_info_log(shader)));
+                } else {
+                    gl.attach_shader(program_id, shader);
+                    gl.delete_shader(shader);
                 }
-                gl.attach_shader(pg, shader);
-                shader
-            })
-            .collect();
-
-        unsafe {
-            gl.link_program(pg);
-            if !gl.get_program_link_status(pg) {
-                return Err(gl.get_program_info_log(pg));
             }
-
-            for shader in shaders {
-                gl.detach_shader(pg, shader);
-                gl.delete_shader(shader);
-            }
-
-            gl.use_program(Some(pg));
-            gl.clear_color(0.1, 0.2, 0.3, 1.0);
         }
 
-        Ok(Program { pg })
+        unsafe {
+            gl.link_program(program_id);
+            if !gl.get_program_link_status(program_id) {
+                return Err(gl.get_program_info_log(program_id).into());
+            }
+
+            gl.use_program(Some(program_id));
+            gl.clear_color(0.1, 0.2, 0.3, 1.0);
+
+            for (_, _, shader_id) in shader_data.iter() {
+                if let Some(shader) = shader_id {
+                    gl.detach_shader(program_id, *shader);
+                }
+            }
+        }
+
+        Ok(Program {
+            program_id: Some(program_id),
+        })
     }
 
     pub unsafe fn use_program(&self, gl: &Context) {
-        gl.use_program(Some(self.pg));
+        gl.use_program(self.program_id);
     }
 
     /// TODO
@@ -66,6 +67,6 @@ impl Program {
 
     pub unsafe fn set_uniform<T: Uniform>(&self, gl: &Context, name: &str, value: T) {
         // ..
-        value.set_as_uniform(gl, &self.pg, name);
+        value.set_as_uniform(gl, &self.program_id.unwrap(), name);
     }
 }

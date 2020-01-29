@@ -73,6 +73,7 @@ impl VertexArray {
                     stride_size,
                     offset * mem::size_of::<f32>() as i32,
                 );
+                // TODO: gl vertex attrib devisor?
                 gl.enable_vertex_attrib_array(attr.location);
             }
             offset += attr.size;
