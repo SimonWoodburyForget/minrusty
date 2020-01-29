@@ -66,7 +66,7 @@ impl Program {
     }
 
     pub unsafe fn set_uniform<T: Uniform>(&self, gl: &Context, name: &str, value: T) {
-        // ..
-        value.set_as_uniform(gl, &self.program_id.unwrap(), name);
+        let location = gl.get_uniform_location(self.program_id.unwrap(), name);
+        value.set_as_uniform(gl, location);
     }
 }
