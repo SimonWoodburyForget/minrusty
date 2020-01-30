@@ -48,16 +48,17 @@ pub fn main() {
 
         game.update();
 
-        use winit::event::Event::*;
-        use winit::event::WindowEvent::*;
+        use winit::event::Event;
+        use winit::event::WindowEvent;
 
         match event {
-            WindowEvent { event, .. } => match event {
-                ClosedRequested => *control_flow = ControlFlow::Exit,
-                // Resized(ref size) => crate::log(&format!("{:?}", size)),
+            Event::WindowEvent { event, .. } => match event {
+                WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                // WindowEvent::Resized(ref size) => crate::log(&format!("{:?}", size)),
+                _ => (),
             },
 
-            RedrawRequested(_) => {
+            Event::RedrawRequested(_) => {
                 let game_render = &*game.ecs.read_resource::<GameRender>();
 
                 let (w, h) = window.dimensions();
@@ -65,7 +66,7 @@ pub fn main() {
                 window.on_event(window::Event::Draw);
             }
 
-            MainEventsCleared => window.on_event(window::Event::Tick),
+            Event::MainEventsCleared => window.on_event(window::Event::Tick),
 
             // TODO:
             // - LoopDestroyed => return
