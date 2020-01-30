@@ -52,33 +52,23 @@ pub fn main() {
         use winit::event::WindowEvent::*;
 
         match event {
-            WindowEvent {
-                event: CloseRequested,
-                ..
-            } => *control_flow = ControlFlow::Exit,
+            WindowEvent { event, .. } => match event {
+                ClosedRequested => *control_flow = ControlFlow::Exit,
+                // Resized(ref size) => crate::log(&format!("{:?}", size)),
+            },
 
             RedrawRequested(_) => {
                 let game_render = &*game.ecs.read_resource::<GameRender>();
 
                 let (w, h) = window.dimensions();
                 renderer.draw(game_render.sin_wave, (w as _, h as _));
-                window.on_draw();
+                window.on_event(window::Event::Draw);
             }
 
-            WindowEvent {
-                event: Resized(ref size),
-                ..
-            } => {
-                crate::log(&format!("{:?}", size));
-            }
-
-            MainEventsCleared => {
-                // crate::log(&format!("cleared!"));
-                window.on_main_events_cleared();
-            }
+            MainEventsCleared => window.on_event(window::Event::Tick),
 
             // TODO:
-            // .? LoopDestroyed => return
+            // - LoopDestroyed => return
             _ => (),
         }
     });

@@ -9,11 +9,16 @@ use wasm_bindgen::JsCast;
 #[cfg(feature = "web")]
 use winit::platform::web::WindowExtWebSys;
 
-// pub enum Event {}
+pub enum Event {
+    /// Aften the window is drawn.
+    Draw,
+
+    /// Aften events have finished firing, and right before drawing.
+    Tick,
+}
 
 /// Represents the games window on Web or Native.
 pub struct Window {
-    // glutin wants to wrap the entire window to do it's own things
     #[cfg(feature = "nat")]
     windowed_context: glutin::ContextWrapper<glutin::PossiblyCurrent, winit::window::Window>,
     #[cfg(feature = "web")]
@@ -104,14 +109,16 @@ impl Window {
         }
     }
 
-    pub fn on_draw(&self) {
-        #[cfg(feature = "nat")]
-        {
-            self.windowed_context.swap_buffers().unwrap();
-        }
-    }
+    pub fn on_event(&self, event: Event) {
+        match event {
+            Event::Draw => {
+                #[cfg(feature = "nat")]
+                self.windowed_context.swap_buffers().unwrap();
+            }
 
-    pub fn on_main_events_cleared(&self) {
-        self.winit_window().request_redraw();
+            Event::Tick => {
+                self.winit_window().request_redraw();
+            }
+        }
     }
 }
