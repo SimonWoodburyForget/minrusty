@@ -1,4 +1,6 @@
 use glow::*;
+#[cfg(feature = "web")]
+use web_sys;
 
 #[cfg(feature = "nat")]
 pub type ShaderId = u32;
@@ -24,4 +26,4 @@ pub type VertexArrayId = WebVertexArrayKey;
 #[cfg(feature = "web")]
 pub type TextureId = WebTextureKey;
 #[cfg(feature = "web")]
-pub type UniformLocation = WebGlUniformLocation;
+pub type UniformLocation = web_sys::WebGlUniformLocation;

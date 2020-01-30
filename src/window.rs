@@ -2,7 +2,6 @@ use crate::render::Renderer;
 use crate::state::{GameRender, GameState};
 use crate::Error;
 
-use specs::prelude::*;
 use winit::event_loop::ControlFlow;
 
 #[cfg(feature = "web")]
@@ -14,9 +13,6 @@ use winit::platform::web::WindowExtWebSys;
 
 /// Represents the games window on Web or Native.
 pub struct Window {
-    event_loop: winit::event_loop::EventLoop<()>,
-    renderer: Renderer,
-
     // glutin wants to wrap the entire window to do it's own things
     #[cfg(feature = "nat")]
     windowed_context: glutin::ContextWrapper<glutin::PossiblyCurrent, winit::window::Window>,
@@ -25,11 +21,10 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn new() -> Result<Self, Error> {
+    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> Result<(Self, Renderer), Error> {
         // initialize a native context with glutin
         #[cfg(feature = "nat")]
         {
-            let event_loop = glutin::event_loop::EventLoop::new();
             let window_builder = glutin::window::WindowBuilder::new()
                 .with_title("Minrusty")
                 .with_inner_size(glutin::dpi::LogicalSize::new(1024.0, 768.0));
@@ -45,17 +40,12 @@ impl Window {
             });
             let renderer = Renderer::new(context)?;
 
-            Ok(Self {
-                event_loop,
-                renderer,
-                windowed_context,
-            })
+            Ok((Self { windowed_context }, renderer))
         }
 
         // initialize a web context with web-sys
         #[cfg(feature = "web")]
         {
-            let event_loop = winit::event_loop::EventLoop::new();
             let window = winit::window::WindowBuilder::new()
                 .with_title("Minrusty")
                 .build(&event_loop)
@@ -83,87 +73,45 @@ impl Window {
 
             let renderer = Renderer::new(context)?;
 
-            Ok(Self {
-                event_loop,
-                renderer,
-                window,
-            })
+            Ok((Self { window }, renderer))
         }
     }
 
-    pub fn run(self, mut gs: GameState) {
-        let Self {
-            event_loop,
-            renderer,
-            #[cfg(feature = "nat")]
-            windowed_context,
-            #[cfg(feature = "web")]
-            window,
-        } = self;
-
+    pub fn winit_window(&self) -> &winit::window::Window {
         #[cfg(feature = "web")]
-        let canvas = window.canvas();
+        {
+            &self.window
+        }
 
-        event_loop.run(move |event, _, control_flow| {
-            *control_flow = ControlFlow::Poll;
+        #[cfg(feature = "nat")]
+        {
+            self.windowed_context.window()
+        }
+    }
 
-            #[cfg(feature = "nat")]
-            let window = windowed_context.window();
+    pub fn dimensions(&self) -> (u32, u32) {
+        #[cfg(feature = "web")]
+        {
+            let canvas = self.window.canvas();
+            (canvas.client_width() as _, canvas.client_height() as _)
+        }
 
-            #[cfg(feature = "web")]
-            {
-                let w = canvas.client_width();
-                let h = canvas.client_height();
-                // crate::log(&format!("{:?}", (w, h)));
+        #[cfg(feature = "nat")]
+        {
+            let winit::dpi::PhysicalSize { width, height } =
+                self.windowed_context.window().inner_size();
+            (width as _, height)
+        }
+    }
 
-                // TODO:
-                // .. send resize event
-                // .. set gl viewport
-            }
+    pub fn on_draw(&self) {
+        #[cfg(feature = "nat")]
+        {
+            self.windowed_context.swap_buffers().unwrap();
+        }
+    }
 
-            // TODO:
-            // .. on redraw request
-            // .. read render state
-            // .. pass render state to rendering function
-            // .. check window id?
-
-            gs.update();
-
-            use winit::event::Event::*;
-            use winit::event::WindowEvent::*;
-
-            match event {
-                WindowEvent {
-                    event: CloseRequested,
-                    ..
-                } => *control_flow = ControlFlow::Exit,
-
-                RedrawRequested(_) => {
-                    let game_render = &*gs.ecs.read_resource::<GameRender>();
-                    renderer.draw(game_render.sin_wave);
-
-                    #[cfg(feature = "nat")]
-                    windowed_context.swap_buffers().unwrap();
-                }
-
-                WindowEvent {
-                    event: Resized(ref size),
-                    ..
-                } => {
-                    crate::log(&format!("{:?}", size));
-                }
-
-                MainEventsCleared => {
-                    // crate::log(&format!("cleared!"));
-                    window.request_redraw();
-                }
-
-                // TODO:
-                // .? LoopDestroyed => return
-                _ => (),
-            }
-        });
-
-        // .. destruction
+    pub fn on_main_events_cleared(&self) {
+        self.winit_window().request_redraw();
     }
 }

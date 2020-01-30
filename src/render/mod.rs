@@ -70,10 +70,14 @@ impl Renderer {
         })
     }
 
-    pub fn draw(&self, scale: f32) {
+    pub fn draw(&self, scale: f32, (w, h): (u32, u32)) {
         let Self { va, pg, tx, gl } = self;
+
+        // translate world by screen size?
+
         unsafe {
             gl.clear(glow::COLOR_BUFFER_BIT);
+            gl.viewport(0, 0, w as _, h as _);
 
             let mut m = Mat4::identity();
             m.scale_3d(scale);
