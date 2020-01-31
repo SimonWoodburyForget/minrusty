@@ -21,6 +21,10 @@ pub use vertex_array::*;
 
 use glow::*;
 
+use crate::state::GameStart;
+use crate::ScreenSize;
+use specs::prelude::*;
+
 use image::io::Reader;
 use image::DynamicImage;
 use image::FilterType;
@@ -70,10 +74,16 @@ impl Renderer {
         })
     }
 
-    pub fn draw(&self, scale: f32, (w, h): (u32, u32)) {
+    pub fn render<'a>(&self, (start, screen_size): (Read<'a, GameStart>, Read<'a, ScreenSize>)) {
         let Self { va, pg, tx, gl } = self;
 
-        // translate world by screen size?
+        let elapsed = start.0.elapsed();
+        let sec_from_start = elapsed.as_secs() as f32 + elapsed.subsec_nanos() as f32 * 1e-9;
+
+        use f32;
+        let scale = sec_from_start.sin();
+
+        let ScreenSize((w, h)) = *screen_size;
 
         unsafe {
             gl.clear(glow::COLOR_BUFFER_BIT);

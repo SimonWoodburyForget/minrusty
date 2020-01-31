@@ -17,43 +17,17 @@ impl Default for GameStart {
     }
 }
 
-/// Game render resource.
-#[derive(Default)]
-pub struct GameRender {
-    /// Seconds feed through a sin function.
-    pub sin_wave: f32,
-}
-
-/// Game rendering system. Turns resources and components into something that
-/// can actually be rendered by the OpenGL pipeline.
-pub struct RenderSystem;
-
-impl<'a> System<'a> for RenderSystem {
+// .. eventually?
+pub struct TileSystem;
+impl<'a> System<'a> for TileSystem {
     type SystemData = (
-        Entities<'a>,
         ReadStorage<'a, Identity>,
         ReadStorage<'a, Position>,
         ReadStorage<'a, Tile>,
-        Read<'a, GameStart>,
-        Write<'a, GameRender>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (entities, ident, pos, tile, start, mut render) = data;
-
-        // (entities, ident, pos, tile)
-        //     .join()
-        //     .for_each(|(entity, ident, pos, _)| {
-        //         // .. do stuff
-        //     });
-
-        let elapsed = start.0.elapsed();
-        let sec_from_start = elapsed.as_secs() as f32 + elapsed.subsec_nanos() as f32 * 1e-9;
-
-        use f32;
-        *render = GameRender {
-            sin_wave: sec_from_start.sin(),
-        }
+        // ..
     }
 }
 
@@ -68,10 +42,11 @@ pub struct GameState {
 impl GameState {
     pub fn new() -> Self {
         let mut world = World::new();
+        world.insert(GameStart::default());
         world.insert(DeltaTime::default());
 
         let mut dispatcher = DispatcherBuilder::new()
-            .with(RenderSystem, "render-system", &[])
+            .with(TileSystem, "tile-system", &[])
             .build();
         dispatcher.setup(&mut world);
 
