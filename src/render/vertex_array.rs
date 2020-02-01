@@ -29,36 +29,19 @@ impl VertexAttribute {
 
 struct VertexAttributes {
     data_type: u32,
-    vertex_buffer: Buffer,
-    element_buffer: Option<Buffer>,
     attrs: Vec<VertexAttribute>,
 }
 
 impl VertexAttributes {
-    fn new(
-        data_type: u32,
-        vertex_buffer: Buffer,
-        element_buffer: Option<Buffer>,
-        attrs: Vec<VertexAttribute>,
-    ) -> Self {
+    fn new(data_type: u32, attrs: Vec<VertexAttribute>) -> Self {
         // TODO: implement this for other types
         assert_eq!(data_type, glow::FLOAT);
 
-        Self {
-            data_type,
-            attrs,
-            vertex_buffer,
-            element_buffer,
-        }
+        Self { data_type, attrs }
     }
 
-    fn setup(&self, gl: &Context) {
-        let Self {
-            data_type,
-            attrs,
-            vertex_buffer,
-            element_buffer,
-        } = self;
+    fn setup(&self, gl: &Context, vertex_buffer: &Buffer, element_buffer: Option<&Buffer>) {
+        let Self { data_type, attrs } = self;
 
         let stride_count = attrs.iter().map(|a| a.size).sum::<i32>();
         let stride_size = stride_count * unsafe { mem::size_of::<f32>() } as i32;
@@ -87,7 +70,7 @@ impl VertexAttributes {
                 gl.vertex_attrib_divisor(*location, divisor.unwrap_or(0));
                 gl.enable_vertex_attrib_array(*location);
             }
-            vertex_buffer.unbind(&gl);
+            // vertex_buffer.unbind(&gl);
             offset += *size;
         }
     }
@@ -121,18 +104,18 @@ impl VertexArray {
         let element_buffer = Buffer::immutable(&gl, glow::ELEMENT_ARRAY_BUFFER, &indices)?;
 
         #[rustfmt::skip]
-        let instance_positions: [f32; 8] = [
-            1.0, 1.0,
-            2.0, 1.0,
-            1.0, 2.0,
-            2.0, 2.0,
+        let instance_positions = [
+            0.0, 0.0_f32,
+            0.0, 1.0,
+            0.0, 2.0,
+            0.0, 3.0,
+            0.0, 4.0,
+            0.0, 5.0,
         ];
-        let instance_positions = Buffer::immutable(&gl, glow::ARRAY_BUFFER, &vertices)?;
+        let instance_positions = Buffer::immutable(&gl, glow::ARRAY_BUFFER, &instance_positions)?;
 
         let attrs = VertexAttributes::new(
             glow::FLOAT,
-            vertex_buffer,
-            Some(element_buffer),
             vec![
                 VertexAttribute::new(0, 3), // position
                 VertexAttribute::new(1, 3), // color
@@ -142,8 +125,6 @@ impl VertexArray {
 
         let attrs_b = VertexAttributes::new(
             glow::FLOAT,
-            instance_positions,
-            None,
             vec![
                 VertexAttribute::new(3, 2).with_div(1), // tiling
             ],
@@ -152,8 +133,8 @@ impl VertexArray {
         let vao = Some(unsafe { gl.create_vertex_array()? });
         unsafe { gl.bind_vertex_array(vao) };
 
-        attrs.setup(&gl);
-        attrs_b.setup(&gl);
+        attrs.setup(&gl, &vertex_buffer, Some(&element_buffer));
+        attrs_b.setup(&gl, &instance_positions, None);
 
         unsafe {
             gl.bind_buffer(glow::ARRAY_BUFFER, None);

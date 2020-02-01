@@ -101,12 +101,12 @@ impl Renderer {
 
         let ScreenSize((w, h)) = *screen_size;
 
+        let mut m = Mat4::identity();
+        m.scale_3d(scale);
+
         unsafe {
             gl.clear(glow::COLOR_BUFFER_BIT);
             gl.viewport(0, 0, w as _, h as _);
-
-            let mut m = Mat4::identity();
-            m.scale_3d(scale);
 
             pg.use_program(&gl);
             // pg.set_uniform(&gl, "ourColor", Vec4::new(0.0, green, 0.0, 1.0));
@@ -114,7 +114,7 @@ impl Renderer {
             tx.bind(&gl);
             va.bind(&gl);
             // gl.draw_arrays(glow::TRIANGLES, 0, 6);
-            gl.draw_elements_instanced(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0, 4);
+            gl.draw_elements_instanced(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0, 5);
 
             // gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
             gl.bind_vertex_array(None);

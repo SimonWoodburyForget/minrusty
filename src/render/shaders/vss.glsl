@@ -16,7 +16,6 @@ void main() {
                      0.0, 0.0, 1.0, 0.0,
                      aTile.x, aTile.y, 0.0, 1.0);
   vec4 pos = vec4(aPos, 1.0);
-  // pos.xy = pos.xy + aTile;
   gl_Position = transform * tiling * pos;
   vColor = aColor;
   vTex = aTex;
