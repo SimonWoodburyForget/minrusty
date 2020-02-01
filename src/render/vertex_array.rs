@@ -18,26 +18,54 @@ impl VertexAttribute {
             divisor: None,
         }
     }
+
+    fn with_div(self, divisor: u32) -> Self {
+        Self {
+            divisor: Some(divisor),
+            ..self
+        }
+    }
 }
 
 struct VertexAttributes {
     data_type: u32,
+    vertex_buffer: Buffer,
+    element_buffer: Option<Buffer>,
     attrs: Vec<VertexAttribute>,
 }
 
 impl VertexAttributes {
-    fn new(data_type: u32, attrs: Vec<VertexAttribute>) -> Self {
+    fn new(
+        data_type: u32,
+        vertex_buffer: Buffer,
+        element_buffer: Option<Buffer>,
+        attrs: Vec<VertexAttribute>,
+    ) -> Self {
         // TODO: implement this for other types
         assert_eq!(data_type, glow::FLOAT);
 
-        Self { data_type, attrs }
+        Self {
+            data_type,
+            attrs,
+            vertex_buffer,
+            element_buffer,
+        }
     }
 
     fn setup(&self, gl: &Context) {
-        let Self { data_type, attrs } = self;
+        let Self {
+            data_type,
+            attrs,
+            vertex_buffer,
+            element_buffer,
+        } = self;
 
         let stride_count = attrs.iter().map(|a| a.size).sum::<i32>();
         let stride_size = stride_count * unsafe { mem::size_of::<f32>() } as i32;
+
+        if let Some(ebo) = element_buffer {
+            ebo.bind(&gl);
+        }
 
         let mut offset = 0;
         for VertexAttribute {
@@ -46,8 +74,8 @@ impl VertexAttributes {
             divisor,
         } in attrs.iter()
         {
+            vertex_buffer.bind(&gl);
             unsafe {
-                // TODO: bind buffer?
                 gl.vertex_attrib_pointer_f32(
                     *location,
                     *size,
@@ -56,11 +84,10 @@ impl VertexAttributes {
                     stride_size,
                     offset * mem::size_of::<f32>() as i32,
                 );
-                if let Some(d) = *divisor {
-                    gl.vertex_attrib_divisor(*location, d);
-                }
+                gl.vertex_attrib_divisor(*location, divisor.unwrap_or(0));
                 gl.enable_vertex_attrib_array(*location);
             }
+            vertex_buffer.unbind(&gl);
             offset += *size;
         }
     }
@@ -69,8 +96,7 @@ impl VertexAttributes {
 pub struct VertexArray {
     /// Vertex Array
     vao: Option<VertexArrayId>,
-    vertex_buffer: Buffer,
-    element_buffer: Buffer,
+    attrs: VertexAttributes,
 }
 
 impl VertexArray {
@@ -94,32 +120,47 @@ impl VertexArray {
         ];
         let element_buffer = Buffer::immutable(&gl, glow::ELEMENT_ARRAY_BUFFER, &indices)?;
 
+        #[rustfmt::skip]
+        let instance_positions: [f32; 8] = [
+            1.0, 1.0,
+            2.0, 1.0,
+            1.0, 2.0,
+            2.0, 2.0,
+        ];
+        let instance_positions = Buffer::immutable(&gl, glow::ARRAY_BUFFER, &vertices)?;
+
         let attrs = VertexAttributes::new(
             glow::FLOAT,
+            vertex_buffer,
+            Some(element_buffer),
             vec![
-                VertexAttribute::new(0, 3), // positon
+                VertexAttribute::new(0, 3), // position
                 VertexAttribute::new(1, 3), // color
                 VertexAttribute::new(2, 2), // texture
+            ],
+        );
+
+        let attrs_b = VertexAttributes::new(
+            glow::FLOAT,
+            instance_positions,
+            None,
+            vec![
+                VertexAttribute::new(3, 2).with_div(1), // tiling
             ],
         );
 
         let vao = Some(unsafe { gl.create_vertex_array()? });
         unsafe { gl.bind_vertex_array(vao) };
 
-        vertex_buffer.bind(&gl);
-        element_buffer.bind(&gl);
         attrs.setup(&gl);
+        attrs_b.setup(&gl);
 
         unsafe {
             gl.bind_buffer(glow::ARRAY_BUFFER, None);
             gl.bind_vertex_array(None);
         }
 
-        Ok(Self {
-            vao,
-            vertex_buffer,
-            element_buffer,
-        })
+        Ok(Self { vao, attrs })
     }
 
     pub unsafe fn bind(&self, gl: &Context) {
@@ -131,7 +172,8 @@ impl VertexArray {
             gl.delete_vertex_array(vao);
         }
 
-        self.vertex_buffer.delete(&gl);
-        self.element_buffer.delete(&gl);
+        // TODO
+        // self.vertex_buffer.delete(&gl);
+        // self.element_buffer.delete(&gl);
     }
 }

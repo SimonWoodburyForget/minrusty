@@ -57,8 +57,10 @@ fn load_bytes(bytes: &[u8]) -> DynamicImage {
 impl Renderer {
     pub fn new(gl: Context) -> Result<Self, RenderError> {
         let images = [
-            load_bytes(include_bytes!("../../assets/core-shard.png")),
-            load_bytes(include_bytes!("../../assets/copper-wall.png")),
+            load_bytes(include_bytes!("../../assets/a.png")),
+            load_bytes(include_bytes!("../../assets/b.png")),
+            load_bytes(include_bytes!("../../assets/d.png")),
+            load_bytes(include_bytes!("../../assets/c.png")),
         ];
 
         let tx = Texture::from_images(&gl, &images)?;
@@ -112,7 +114,7 @@ impl Renderer {
             tx.bind(&gl);
             va.bind(&gl);
             // gl.draw_arrays(glow::TRIANGLES, 0, 6);
-            gl.draw_elements_instanced(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0, 2);
+            gl.draw_elements_instanced(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0, 4);
 
             // gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
             gl.bind_vertex_array(None);

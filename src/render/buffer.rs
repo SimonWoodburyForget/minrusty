@@ -47,7 +47,12 @@ impl Buffer {
         }
     }
 
-    /// Note that immutable buffers can't be deleted.
+    pub fn unbind(&self, gl: &Context) {
+        unsafe {
+            gl.bind_buffer(self.buffer_type, None);
+        }
+    }
+
     pub fn delete(&self, gl: &Context) {
         if let Some(buffer_id) = self.buffer_id {
             unsafe { gl.delete_buffer(buffer_id) };
