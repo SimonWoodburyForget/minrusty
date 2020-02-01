@@ -21,6 +21,7 @@ pub use vertex_array::*;
 
 use glow::*;
 
+use crate::components::*;
 use crate::state::GameStart;
 use crate::ScreenSize;
 use specs::prelude::*;
@@ -74,8 +75,21 @@ impl Renderer {
         })
     }
 
-    pub fn render<'a>(&self, (start, screen_size): (Read<'a, GameStart>, Read<'a, ScreenSize>)) {
+    pub fn render<'a>(
+        &self,
+        (start, screen_size, ent, positions): (
+            Read<'a, GameStart>,
+            Read<'a, ScreenSize>,
+            Entities<'a>,
+            ReadStorage<'a, Position>,
+        ),
+    ) {
         let Self { va, pg, tx, gl } = self;
+
+        let mut pos_vec = Vec::new();
+        for (_, pos) in (&*ent, &positions).join() {
+            pos_vec.push(pos.0);
+        }
 
         let elapsed = start.0.elapsed();
         let sec_from_start = elapsed.as_secs() as f32 + elapsed.subsec_nanos() as f32 * 1e-9;

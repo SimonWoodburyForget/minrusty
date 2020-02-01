@@ -33,6 +33,14 @@ impl Buffer {
         })
     }
 
+    pub fn dynamic(gl: &Context, buffer_type: u32, size: usize) -> Result<Self, RenderError> {
+        unimplemented!();
+    }
+
+    pub fn update<T>(gl: &Context, buffer_type: u32, data: &[T]) -> Result<(), RenderError> {
+        unimplemented!();
+    }
+
     pub fn bind(&self, gl: &Context) {
         unsafe {
             gl.bind_buffer(self.buffer_type, self.buffer_id);

@@ -3,6 +3,69 @@ use super::*;
 use glow::*;
 use std::mem;
 
+#[derive(Clone, Copy)]
+struct VertexAttribute {
+    location: u32,
+    size: i32,
+    divisor: Option<u32>,
+}
+
+impl VertexAttribute {
+    fn new(location: u32, size: i32) -> Self {
+        Self {
+            location,
+            size,
+            divisor: None,
+        }
+    }
+}
+
+struct VertexAttributes {
+    data_type: u32,
+    attrs: Vec<VertexAttribute>,
+}
+
+impl VertexAttributes {
+    fn new(data_type: u32, attrs: Vec<VertexAttribute>) -> Self {
+        // TODO: implement this for other types
+        assert_eq!(data_type, glow::FLOAT);
+
+        Self { data_type, attrs }
+    }
+
+    fn setup(&self, gl: &Context) {
+        let Self { data_type, attrs } = self;
+
+        let stride_count = attrs.iter().map(|a| a.size).sum::<i32>();
+        let stride_size = stride_count * unsafe { mem::size_of::<f32>() } as i32;
+
+        let mut offset = 0;
+        for VertexAttribute {
+            location,
+            size,
+            divisor,
+        } in attrs.iter()
+        {
+            unsafe {
+                // TODO: bind buffer?
+                gl.vertex_attrib_pointer_f32(
+                    *location,
+                    *size,
+                    *data_type,
+                    false,
+                    stride_size,
+                    offset * mem::size_of::<f32>() as i32,
+                );
+                if let Some(d) = *divisor {
+                    gl.vertex_attrib_divisor(*location, d);
+                }
+                gl.enable_vertex_attrib_array(*location);
+            }
+            offset += *size;
+        }
+    }
+}
+
 pub struct VertexArray {
     /// Vertex Array
     vao: Option<VertexArrayId>,
@@ -31,53 +94,21 @@ impl VertexArray {
         ];
         let element_buffer = Buffer::immutable(&gl, glow::ELEMENT_ARRAY_BUFFER, &indices)?;
 
-        struct VertexAttribute {
-            location: u32,
-            size: i32,
-            data_type: u32,
-        }
-
-        impl VertexAttribute {
-            fn new(location: u32, size: i32, data_type: u32) -> Self {
-                Self {
-                    location,
-                    size,
-                    data_type,
-                }
-            }
-        }
-
-        let attrs: [VertexAttribute; 3] = [
-            VertexAttribute::new(0, 3, glow::FLOAT), // positon
-            VertexAttribute::new(1, 3, glow::FLOAT), // color
-            VertexAttribute::new(2, 2, glow::FLOAT), // texture
-        ];
+        let attrs = VertexAttributes::new(
+            glow::FLOAT,
+            vec![
+                VertexAttribute::new(0, 3), // positon
+                VertexAttribute::new(1, 3), // color
+                VertexAttribute::new(2, 2), // texture
+            ],
+        );
 
         let vao = Some(unsafe { gl.create_vertex_array()? });
         unsafe { gl.bind_vertex_array(vao) };
 
         vertex_buffer.bind(&gl);
         element_buffer.bind(&gl);
-
-        let stride_count = attrs.iter().map(|a| a.size).sum::<i32>();
-        let stride_size = stride_count * unsafe { mem::size_of::<f32>() } as i32;
-
-        let mut offset = 0;
-        for attr in attrs.iter() {
-            unsafe {
-                gl.vertex_attrib_pointer_f32(
-                    attr.location,
-                    attr.size,
-                    attr.data_type,
-                    false,
-                    stride_size,
-                    offset * mem::size_of::<f32>() as i32,
-                );
-                // TODO: gl vertex attrib devisor?
-                gl.enable_vertex_attrib_array(attr.location);
-            }
-            offset += attr.size;
-        }
+        attrs.setup(&gl);
 
         unsafe {
             gl.bind_buffer(glow::ARRAY_BUFFER, None);
@@ -93,8 +124,6 @@ impl VertexArray {
 
     pub unsafe fn bind(&self, gl: &Context) {
         gl.bind_vertex_array(self.vao);
-        // gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(self.ebo));
-        // gl.bind_buffer(glow::ARRAY_BUFFER, Some(self.vbo));
     }
 
     pub unsafe fn delete(&self, gl: &Context) {
