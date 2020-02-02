@@ -33,11 +33,11 @@ impl Buffer {
         })
     }
 
-    pub fn dynamic(gl: &Context, buffer_type: u32, size: usize) -> Result<Self, RenderError> {
+    pub fn _dynamic(_gl: &Context, _buffer_type: u32, _size: usize) -> Result<Self, RenderError> {
         unimplemented!();
     }
 
-    pub fn update<T>(gl: &Context, buffer_type: u32, data: &[T]) -> Result<(), RenderError> {
+    pub fn _update<T>(_gl: &Context, _buffer_type: u32, _data: &[T]) -> Result<(), RenderError> {
         unimplemented!();
     }
 
@@ -47,13 +47,13 @@ impl Buffer {
         }
     }
 
-    pub fn unbind(&self, gl: &Context) {
+    pub fn _unbind(&self, gl: &Context) {
         unsafe {
             gl.bind_buffer(self.buffer_type, None);
         }
     }
 
-    pub fn delete(&self, gl: &Context) {
+    pub fn _delete(&self, gl: &Context) {
         if let Some(buffer_id) = self.buffer_id {
             unsafe { gl.delete_buffer(buffer_id) };
         }

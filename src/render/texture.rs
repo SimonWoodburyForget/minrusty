@@ -14,11 +14,7 @@ pub struct Texture {
 }
 
 impl Texture {
-    pub fn empty() -> Self {
-        Self::default()
-    }
-
-    pub fn delete(&self, gl: &Context) {
+    pub fn _delete(&self, gl: &Context) {
         if let Some(id) = self.texture_id {
             unsafe { gl.delete_texture(id) }
         }
@@ -108,7 +104,7 @@ impl Texture {
         }
     }
 
-    pub fn update(&self, gl: &Context, bytes: &[u8]) {
+    pub fn _update(&self, gl: &Context, bytes: &[u8]) {
         assert_eq!(
             self.width as usize * self.height as usize * self.depth as usize * 4,
             bytes.len()

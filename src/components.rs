@@ -1,6 +1,5 @@
 use specs::prelude::*;
 use specs::Component;
-use std::borrow::Cow;
 use vek::{Vec3, Vec4};
 
 #[derive(Component, Clone, Debug)]
@@ -12,6 +11,10 @@ pub struct Camera;
 /// Position in 3D space.
 #[derive(Component, Clone, Debug)]
 pub struct Position(pub Vec3<f32>);
+
+/// Size of a tile.
+#[derive(Component, Clone, Debug)]
+pub struct Size(pub f32);
 
 #[derive(Component, Clone, Debug)]
 pub struct Color(pub Vec4<f32>);

@@ -5,6 +5,7 @@
 
 mod buffer;
 mod error;
+mod img;
 mod program;
 mod texture;
 mod types;
@@ -13,6 +14,7 @@ mod vertex_array;
 
 pub use buffer::*;
 pub use error::*;
+pub use img::*;
 pub use program::*;
 pub use texture::*;
 pub use types::*;
@@ -26,11 +28,6 @@ use crate::state::GameStart;
 use crate::ScreenSize;
 use specs::prelude::*;
 
-use image::io::Reader;
-use image::DynamicImage;
-use image::FilterType;
-use image::ImageFormat;
-use std::io::Cursor;
 use vek::Mat4;
 
 /// Type which holds onto the OpenGL context, and the various objects that surrounds it.
@@ -40,18 +37,6 @@ pub struct Renderer {
     tx: Texture,
     va: VertexArray,
     pg: Program,
-}
-
-/// Loads an image from bytes, resizes it to 32x32 to avoid dealing with varying size images.
-fn load_bytes(bytes: &[u8]) -> DynamicImage {
-    Reader::new(Cursor::new(bytes.as_ref()))
-        .with_guessed_format()
-        .expect("Cursor io never fails!")
-        .decode()
-        .unwrap()
-        // TODO:
-        // - handle images of varying sizes
-        .resize(32, 32, FilterType::Nearest)
 }
 
 impl Renderer {
@@ -148,9 +133,9 @@ impl Renderer {
         let elapsed = start.0.elapsed();
         let sec_from_start = elapsed.as_secs() as f32 + elapsed.subsec_nanos() as f32 * 1e-9;
 
-        use f32;
         let scale = sec_from_start.sin();
 
+        #[allow(dead_code)]
         let ScreenSize((w, h)) = *screen_size;
 
         let mut m = Mat4::identity();

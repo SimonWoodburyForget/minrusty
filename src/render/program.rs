@@ -29,10 +29,13 @@ impl Program {
             (glow::FRAGMENT_SHADER, fragment_source, None),
         ];
 
-        for (shader_type, shader_source, mut shader_id) in shader_data.iter_mut() {
+        for (shader_type, shader_source, ref mut shader_id) in shader_data.iter_mut() {
             unsafe {
                 let shader = gl.create_shader(*shader_type)?;
-                shader_id = Some(shader);
+
+                // to later detach the shader
+                *shader_id = Some(shader);
+
                 gl.shader_source(shader, shader_source);
                 gl.compile_shader(shader);
                 if !gl.get_shader_compile_status(shader) {
@@ -55,9 +58,8 @@ impl Program {
             gl.clear_color(0.1, 0.2, 0.3, 1.0);
 
             for (_, _, shader_id) in shader_data.iter() {
-                if let Some(shader) = shader_id {
-                    gl.detach_shader(program_id, *shader);
-                }
+                let shader = shader_id.expect("shader_id is None, when it should of compiled.");
+                gl.detach_shader(program_id, shader);
             }
         }
 
@@ -71,7 +73,7 @@ impl Program {
     }
 
     /// TODO
-    pub unsafe fn delete(&self, gl: &Context) {
+    pub unsafe fn _delete(&self, _gl: &Context) {
         unimplemented!();
     }
 

@@ -1,6 +1,4 @@
 use super::*;
-use crate::render::program::Program;
-use crate::render::types::ProgramId;
 
 use glow::*;
 

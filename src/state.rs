@@ -2,7 +2,7 @@ use crate::components::*;
 use instant;
 use specs::prelude::*;
 use std::borrow::Cow;
-use vek::{Vec2, Vec3};
+use vek::Vec3;
 
 /// Duration between current and last instants.
 #[derive(Default)]
@@ -26,7 +26,7 @@ impl<'a> System<'a> for TileSystem {
         ReadStorage<'a, Tile>,
     );
 
-    fn run(&mut self, data: Self::SystemData) {
+    fn run(&mut self, _data: Self::SystemData) {
         // ..
     }
 }

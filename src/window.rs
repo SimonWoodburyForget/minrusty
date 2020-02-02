@@ -1,8 +1,5 @@
 use crate::render::Renderer;
-// use crate::state::{GameRender, GameState};
 use crate::Error;
-
-use winit::event_loop::ControlFlow;
 
 #[cfg(feature = "web")]
 use wasm_bindgen::JsCast;

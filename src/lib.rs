@@ -11,7 +11,6 @@ pub use error::Error;
 use window::Window;
 
 use specs::prelude::*;
-use state::*;
 
 #[cfg(feature = "web")]
 mod wasm {

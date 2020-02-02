@@ -1,4 +1,5 @@
-use glow::*;
+#![allow(dead_code)]
+
 #[cfg(feature = "web")]
 use web_sys;
 
@@ -16,14 +17,14 @@ pub type TextureId = u32;
 pub type UniformLocation = u32;
 
 #[cfg(feature = "web")]
-pub type ShaderId = WebShaderKey;
+pub type ShaderId = glow::WebShaderKey;
 #[cfg(feature = "web")]
-pub type ProgramId = WebProgramKey;
+pub type ProgramId = glow::WebProgramKey;
 #[cfg(feature = "web")]
-pub type BufferId = WebBufferKey;
+pub type BufferId = glow::WebBufferKey;
 #[cfg(feature = "web")]
-pub type VertexArrayId = WebVertexArrayKey;
+pub type VertexArrayId = glow::WebVertexArrayKey;
 #[cfg(feature = "web")]
-pub type TextureId = WebTextureKey;
+pub type TextureId = glow::WebTextureKey;
 #[cfg(feature = "web")]
 pub type UniformLocation = web_sys::WebGlUniformLocation;

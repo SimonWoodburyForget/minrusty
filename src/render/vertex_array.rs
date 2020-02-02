@@ -49,7 +49,7 @@ fn setup_vertex_attributes(
     vertex_buffer: &Buffer,
 ) {
     let stride_count = attrs.iter().map(|attr| attr.size).sum::<i32>();
-    let stride_size = stride_count * unsafe { mem::size_of::<f32>() } as i32;
+    let stride_size = stride_count * mem::size_of::<f32>() as i32;
 
     vertex_buffer.bind(&gl);
     let mut offset = 0;
@@ -89,13 +89,13 @@ impl VertexArray {
         Ok(Self { vao })
     }
 
-    pub unsafe fn bind(&self, gl: &Context) {
-        gl.bind_vertex_array(self.vao);
+    pub fn bind(&self, gl: &Context) {
+        unsafe { gl.bind_vertex_array(self.vao) };
     }
 
-    pub unsafe fn delete(&self, gl: &Context) {
+    pub fn _delete(&self, gl: &Context) {
         if let Some(vao) = self.vao {
-            gl.delete_vertex_array(vao);
+            unsafe { gl.delete_vertex_array(vao) };
         }
 
         // TODO
