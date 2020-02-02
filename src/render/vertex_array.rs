@@ -4,14 +4,14 @@ use glow::*;
 use std::mem;
 
 #[derive(Clone, Copy)]
-struct VertexAttribute {
+pub struct VertexAttribute {
     location: u32,
     size: i32,
     divisor: Option<u32>,
 }
 
 impl VertexAttribute {
-    fn new(location: u32, size: i32) -> Self {
+    pub fn new(location: u32, size: i32) -> Self {
         Self {
             location,
             size,
@@ -19,7 +19,7 @@ impl VertexAttribute {
         }
     }
 
-    fn with_div(self, divisor: u32) -> Self {
+    pub fn with_div(self, divisor: u32) -> Self {
         Self {
             divisor: Some(divisor),
             ..self
@@ -66,59 +66,19 @@ pub struct VertexArray {
 
 impl VertexArray {
     /// Initializes vertex and index buffers from an OpenGL context.
-    pub fn quad(gl: &Context) -> Result<Self, RenderError> {
-        #[rustfmt::skip]
-        let vertices = [
-             // square 1 
-             // pos       // texture
-             0.5,  0.5,   1.0,  1.0, // top right
-             0.5, -0.5,   1.0,  0.0, // bottom right
-            -0.5,  0.5,   0.0,  1.0, // top left
-            -0.5, -0.5,   0.0,  0.0_f32, // bottom left
-        ];
-        let vertex_buffer = Buffer::immutable(&gl, glow::ARRAY_BUFFER, &vertices)?;
-
-        #[rustfmt::skip]
-        let indices: [u32; 6] = [
-            0, 1, 2, // top right triangle
-            2, 3, 1, // buttom left triangle
-        ];
-        let element_buffer = Buffer::immutable(&gl, glow::ELEMENT_ARRAY_BUFFER, &indices)?;
-
-        #[rustfmt::skip]
-        let instance_positions = [
-            0.0, 0.0_f32,
-            0.0, 1.0,
-            0.0, 2.0,
-            0.0, 3.0,
-            0.0, 4.0,
-            0.0, 5.0,
-        ];
-        let instance_positions = Buffer::immutable(&gl, glow::ARRAY_BUFFER, &instance_positions)?;
-
+    pub fn new(
+        gl: &Context,
+        vertex_bindings: &[(&Buffer, &[VertexAttribute])],
+        element_buffer: &Buffer,
+    ) -> Result<Self, RenderError> {
         let vao = Some(unsafe { gl.create_vertex_array()? });
         unsafe { gl.bind_vertex_array(vao) };
 
         element_buffer.bind(&gl);
 
-        setup_vertex_attributes(
-            &gl,
-            glow::FLOAT,
-            &[
-                VertexAttribute::new(0, 2), // position
-                VertexAttribute::new(1, 2), // texture
-            ],
-            &vertex_buffer,
-        );
-
-        setup_vertex_attributes(
-            &gl,
-            glow::FLOAT,
-            &[
-                VertexAttribute::new(2, 2).with_div(1), // tiling
-            ],
-            &instance_positions,
-        );
+        for (vertex_buffer, vertex_attributes) in vertex_bindings.iter() {
+            setup_vertex_attributes(&gl, glow::FLOAT, &vertex_attributes, &vertex_buffer);
+        }
 
         unsafe {
             gl.bind_buffer(glow::ARRAY_BUFFER, None);

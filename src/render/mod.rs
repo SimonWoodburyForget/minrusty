@@ -65,8 +65,53 @@ impl Renderer {
 
         let tx = Texture::from_images(&gl, &images)?;
 
+        #[rustfmt::skip]
+        let vertices = [
+             // square 1 
+             // pos       // texture
+             0.5,  0.5,   1.0,  1.0, // top right
+             0.5, -0.5,   1.0,  0.0, // bottom right
+            -0.5,  0.5,   0.0,  1.0, // top left
+            -0.5, -0.5,   0.0,  0.0_f32, // bottom left
+        ];
+        let vertex_buffer = Buffer::immutable(&gl, glow::ARRAY_BUFFER, &vertices)?;
+        let vertex_buffer_attributes = [
+            VertexAttribute::new(0, 2), // position
+            VertexAttribute::new(1, 2), // texture
+        ];
+
+        #[rustfmt::skip]
+        let indices: [u32; 6] = [
+            0, 1, 2, // top right triangle
+            2, 3, 1, // buttom left triangle
+        ];
+        let element_buffer = Buffer::immutable(&gl, glow::ELEMENT_ARRAY_BUFFER, &indices)?;
+
+        #[rustfmt::skip]
+        let instance_positions = [
+            0.0, 0.0_f32,
+            0.0, 1.0,
+            0.0, 2.0,
+            0.0, 3.0,
+            0.0, 4.0,
+            0.0, 5.0,
+        ];
+        let instance_buffer = Buffer::immutable(&gl, glow::ARRAY_BUFFER, &instance_positions)?;
+        let instance_buffer_attributes = [
+            VertexAttribute::new(2, 2).with_div(1), // tiling
+        ];
+
+        let va = {
+            let bindings = &[
+                (&instance_buffer, instance_buffer_attributes.as_ref()),
+                (&vertex_buffer, vertex_buffer_attributes.as_ref()),
+            ];
+
+            VertexArray::new(&gl, bindings, &element_buffer)
+        }?;
+
         Ok(Self {
-            va: VertexArray::quad(&gl)?,
+            va,
             pg: Program::new(
                 &gl,
                 include_str!("shaders/vss.glsl"),
