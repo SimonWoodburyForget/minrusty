@@ -25,61 +25,43 @@ impl VertexAttribute {
             ..self
         }
     }
-}
 
-struct VertexAttributes {
-    data_type: u32,
-    attrs: Vec<VertexAttribute>,
-}
-
-impl VertexAttributes {
-    fn new(data_type: u32, attrs: Vec<VertexAttribute>) -> Self {
-        // TODO: implement this for other types
-        assert_eq!(data_type, glow::FLOAT);
-
-        Self { data_type, attrs }
+    fn setup(&self, gl: &Context, stride_size: i32, offset: i32, data_type: u32) {
+        unsafe {
+            gl.vertex_attrib_pointer_f32(
+                self.location,
+                self.size,
+                data_type,
+                false,
+                stride_size,
+                offset * mem::size_of::<f32>() as i32,
+            );
+            gl.vertex_attrib_divisor(self.location, self.divisor.unwrap_or(0));
+            gl.enable_vertex_attrib_array(self.location);
+        }
     }
+}
 
-    fn setup(&self, gl: &Context, vertex_buffer: &Buffer, element_buffer: Option<&Buffer>) {
-        let Self { data_type, attrs } = self;
+fn setup_vertex_attributes(
+    gl: &Context,
+    data_type: u32,
+    attrs: &[VertexAttribute],
+    vertex_buffer: &Buffer,
+) {
+    let stride_count = attrs.iter().map(|attr| attr.size).sum::<i32>();
+    let stride_size = stride_count * unsafe { mem::size_of::<f32>() } as i32;
 
-        let stride_count = attrs.iter().map(|a| a.size).sum::<i32>();
-        let stride_size = stride_count * unsafe { mem::size_of::<f32>() } as i32;
-
-        if let Some(ebo) = element_buffer {
-            ebo.bind(&gl);
-        }
-
-        let mut offset = 0;
-        for VertexAttribute {
-            location,
-            size,
-            divisor,
-        } in attrs.iter()
-        {
-            vertex_buffer.bind(&gl);
-            unsafe {
-                gl.vertex_attrib_pointer_f32(
-                    *location,
-                    *size,
-                    *data_type,
-                    false,
-                    stride_size,
-                    offset * mem::size_of::<f32>() as i32,
-                );
-                gl.vertex_attrib_divisor(*location, divisor.unwrap_or(0));
-                gl.enable_vertex_attrib_array(*location);
-            }
-            // vertex_buffer.unbind(&gl);
-            offset += *size;
-        }
+    vertex_buffer.bind(&gl);
+    let mut offset = 0;
+    for attr in attrs.iter() {
+        attr.setup(&gl, stride_size, offset, data_type);
+        offset += attr.size;
     }
 }
 
 pub struct VertexArray {
     /// Vertex Array
     vao: Option<VertexArrayId>,
-    attrs: VertexAttributes,
 }
 
 impl VertexArray {
@@ -114,33 +96,36 @@ impl VertexArray {
         ];
         let instance_positions = Buffer::immutable(&gl, glow::ARRAY_BUFFER, &instance_positions)?;
 
-        let attrs = VertexAttributes::new(
-            glow::FLOAT,
-            vec![
-                VertexAttribute::new(0, 2), // position
-                VertexAttribute::new(1, 2), // texture
-            ],
-        );
-
-        let attrs_b = VertexAttributes::new(
-            glow::FLOAT,
-            vec![
-                VertexAttribute::new(2, 2).with_div(1), // tiling
-            ],
-        );
-
         let vao = Some(unsafe { gl.create_vertex_array()? });
         unsafe { gl.bind_vertex_array(vao) };
 
-        attrs.setup(&gl, &vertex_buffer, Some(&element_buffer));
-        attrs_b.setup(&gl, &instance_positions, None);
+        element_buffer.bind(&gl);
+
+        setup_vertex_attributes(
+            &gl,
+            glow::FLOAT,
+            &[
+                VertexAttribute::new(0, 2), // position
+                VertexAttribute::new(1, 2), // texture
+            ],
+            &vertex_buffer,
+        );
+
+        setup_vertex_attributes(
+            &gl,
+            glow::FLOAT,
+            &[
+                VertexAttribute::new(2, 2).with_div(1), // tiling
+            ],
+            &instance_positions,
+        );
 
         unsafe {
             gl.bind_buffer(glow::ARRAY_BUFFER, None);
             gl.bind_vertex_array(None);
         }
 
-        Ok(Self { vao, attrs })
+        Ok(Self { vao })
     }
 
     pub unsafe fn bind(&self, gl: &Context) {
