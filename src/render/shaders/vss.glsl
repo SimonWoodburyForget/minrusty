@@ -1,23 +1,22 @@
 #version 300 es
-in vec3 aPos;
-in vec3 aColor;
-in vec2 aTex;
-in vec2 aTile;
+in vec2 vertex_pos;
+in vec2 text_pos;
+in vec2 tile_pos;
 
-out vec3 vColor;
-out vec2 vTex;
+out vec2 f_text_pos;
 flat out int id;
 
 uniform mat4 transform;
 
 void main() {
-  mat4 tiling = mat4(1.0, 0.0, 0.0, 0.0,
-                     0.0, 1.0, 0.0, 0.0,
-                     0.0, 0.0, 1.0, 0.0,
-                     aTile.x, aTile.y, 0.0, 1.0);
-  vec4 pos = vec4(aPos, 1.0);
-  gl_Position = transform * tiling * pos;
-  vColor = aColor;
-  vTex = aTex;
+  f_text_pos = text_pos;
+  
+  vec4 pos = vec4(vertex_pos, 1.0, 1.0);
+  mat4 tile = mat4(vec4(1.0, 0.0, 0.0, 0.0),
+                   vec4(0.0, 1.0, 0.0, 0.0),
+                   vec4(0.0, 0.0, 1.0, 0.0),
+                   vec4(tile_pos, 0.0, 1.0));
+  
+  gl_Position = transform * tile * pos;
   id = gl_InstanceID;
 }

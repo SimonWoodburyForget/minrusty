@@ -86,13 +86,13 @@ impl VertexArray {
     /// Initializes vertex and index buffers from an OpenGL context.
     pub fn quad(gl: &Context) -> Result<Self, RenderError> {
         #[rustfmt::skip]
-        let vertices: [f32; 32] = [
+        let vertices = [
              // square 1 
-             // pos            // color         // texture
-             0.5,  0.5, 0.0,   1.0, 0.0, 0.0,   1.0,  1.0, // top right
-             0.5, -0.5, 0.0,   0.0, 1.0, 0.0,   1.0,  0.0, // bottom right
-            -0.5,  0.5, 0.0,   0.0, 0.0, 1.0,   0.0,  1.0, // top left
-            -0.5, -0.5, 0.0,   1.0, 1.0, 0.0,   0.0,  0.0, // bottom left
+             // pos       // texture
+             0.5,  0.5,   1.0,  1.0, // top right
+             0.5, -0.5,   1.0,  0.0, // bottom right
+            -0.5,  0.5,   0.0,  1.0, // top left
+            -0.5, -0.5,   0.0,  0.0_f32, // bottom left
         ];
         let vertex_buffer = Buffer::immutable(&gl, glow::ARRAY_BUFFER, &vertices)?;
 
@@ -117,16 +117,15 @@ impl VertexArray {
         let attrs = VertexAttributes::new(
             glow::FLOAT,
             vec![
-                VertexAttribute::new(0, 3), // position
-                VertexAttribute::new(1, 3), // color
-                VertexAttribute::new(2, 2), // texture
+                VertexAttribute::new(0, 2), // position
+                VertexAttribute::new(1, 2), // texture
             ],
         );
 
         let attrs_b = VertexAttributes::new(
             glow::FLOAT,
             vec![
-                VertexAttribute::new(3, 2).with_div(1), // tiling
+                VertexAttribute::new(2, 2).with_div(1), // tiling
             ],
         );
 

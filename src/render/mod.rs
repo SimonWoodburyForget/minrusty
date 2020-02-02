@@ -114,7 +114,7 @@ impl Renderer {
             tx.bind(&gl);
             va.bind(&gl);
             // gl.draw_arrays(glow::TRIANGLES, 0, 6);
-            gl.draw_elements_instanced(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0, 5);
+            gl.draw_elements_instanced(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0, 4);
 
             // gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
             gl.bind_vertex_array(None);
