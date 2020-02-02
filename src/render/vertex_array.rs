@@ -65,7 +65,8 @@ pub struct VertexArray {
 }
 
 impl VertexArray {
-    /// Initializes vertex and index buffers from an OpenGL context.
+    /// Initializes the vertex array object and it's vertex attribute pointers. Uses `vertex_bindings`
+    /// to setup `VertexAttribute` in relation to some `Buffer`.
     pub fn new(
         gl: &Context,
         vertex_bindings: &[(&Buffer, &[VertexAttribute])],

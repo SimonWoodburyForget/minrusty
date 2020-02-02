@@ -12,11 +12,21 @@ pub struct Program {
 impl Program {
     /// Create simple shader program, out of vertex and fragment source, with
     /// their corresponding uniforms name.
-    pub fn new(gl: &Context, v_source: &str, f_source: &str) -> Result<Self, RenderError> {
+    pub fn new(
+        gl: &Context,
+        vertex_source: &str,
+        fragment_source: &str,
+        attribute_locations: &[(u32, &str)],
+    ) -> Result<Self, RenderError> {
         let program_id = unsafe { gl.create_program() }?;
+
+        for (location, name) in attribute_locations {
+            unsafe { gl.bind_attrib_location(program_id, *location, name) };
+        }
+
         let mut shader_data = [
-            (glow::VERTEX_SHADER, v_source, None),
-            (glow::FRAGMENT_SHADER, f_source, None),
+            (glow::VERTEX_SHADER, vertex_source, None),
+            (glow::FRAGMENT_SHADER, fragment_source, None),
         ];
 
         for (shader_type, shader_source, mut shader_id) in shader_data.iter_mut() {

@@ -1,5 +1,5 @@
 #version 300 es
-in vec2 vertex_pos;
+in vec2 vert_pos;
 in vec2 text_pos;
 in vec2 tile_pos;
 
@@ -11,7 +11,7 @@ uniform mat4 transform;
 void main() {
   f_text_pos = text_pos;
   
-  vec4 pos = vec4(vertex_pos, 1.0, 1.0);
+  vec4 pos = vec4(vert_pos, 1.0, 1.0);
   mat4 tile = mat4(vec4(1.0, 0.0, 0.0, 0.0),
                    vec4(0.0, 1.0, 0.0, 0.0),
                    vec4(0.0, 0.0, 1.0, 0.0),

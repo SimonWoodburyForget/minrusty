@@ -56,6 +56,22 @@ fn load_bytes(bytes: &[u8]) -> DynamicImage {
 
 impl Renderer {
     pub fn new(gl: Context) -> Result<Self, RenderError> {
+        let (vert_pos, text_pos, tile_pos) = (0, 1, 2);
+
+        let pg = Program::new(
+            &gl,
+            include_str!("shaders/vss.glsl"),
+            include_str!("shaders/fss.glsl"),
+            &[
+                (vert_pos, "vert_pos"),
+                (text_pos, "text_pos"),
+                (tile_pos, "tile_pos"),
+            ],
+        )?;
+
+        // TODO:
+        // - bind attrib location in program
+
         let images = [
             load_bytes(include_bytes!("../../assets/a.png")),
             load_bytes(include_bytes!("../../assets/b.png")),
@@ -76,8 +92,8 @@ impl Renderer {
         ];
         let vertex_buffer = Buffer::immutable(&gl, glow::ARRAY_BUFFER, &vertices)?;
         let vertex_buffer_attributes = [
-            VertexAttribute::new(0, 2), // position
-            VertexAttribute::new(1, 2), // texture
+            VertexAttribute::new(vert_pos, 2),
+            VertexAttribute::new(text_pos, 2),
         ];
 
         #[rustfmt::skip]
@@ -98,7 +114,7 @@ impl Renderer {
         ];
         let instance_buffer = Buffer::immutable(&gl, glow::ARRAY_BUFFER, &instance_positions)?;
         let instance_buffer_attributes = [
-            VertexAttribute::new(2, 2).with_div(1), // tiling
+            VertexAttribute::new(tile_pos, 2).with_div(1), // tiling
         ];
 
         let va = {
@@ -110,16 +126,7 @@ impl Renderer {
             VertexArray::new(&gl, bindings, &element_buffer)
         }?;
 
-        Ok(Self {
-            va,
-            pg: Program::new(
-                &gl,
-                include_str!("shaders/vss.glsl"),
-                include_str!("shaders/fss.glsl"),
-            )?,
-            tx,
-            gl,
-        })
+        Ok(Self { va, pg, tx, gl })
     }
 
     pub fn render<'a>(

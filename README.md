@@ -1,4 +1,6 @@
 
+This doesn't do anything interesting yet.
+
 # Building
 
 ## Wasm
