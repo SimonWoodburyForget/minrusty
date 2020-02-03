@@ -3,6 +3,37 @@ use super::*;
 use glow::*;
 use std::mem;
 
+pub struct BufferLayout {
+    pub buffer: Buffer,
+    vertex_attributes: Vec<VertexAttribute>,
+}
+
+impl BufferLayout {
+    pub fn new(buffer: Buffer, vertex_attributes: Vec<VertexAttribute>) -> Self {
+        Self {
+            buffer,
+            vertex_attributes,
+        }
+    }
+
+    pub fn setup(&self, gl: &Context) {
+        let data_type = glow::FLOAT;
+        let stride_count = self
+            .vertex_attributes
+            .iter()
+            .map(|attr| attr.size)
+            .sum::<i32>();
+        let stride_size = stride_count * mem::size_of::<f32>() as i32;
+
+        self.buffer.bind(&gl);
+        let mut offset = 0;
+        for attr in self.vertex_attributes.iter() {
+            attr.setup(&gl, stride_size, offset, data_type);
+            offset += attr.size;
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct VertexAttribute {
     location: u32,
@@ -42,23 +73,6 @@ impl VertexAttribute {
     }
 }
 
-fn setup_vertex_attributes(
-    gl: &Context,
-    data_type: u32,
-    attrs: &[VertexAttribute],
-    vertex_buffer: &Buffer,
-) {
-    let stride_count = attrs.iter().map(|attr| attr.size).sum::<i32>();
-    let stride_size = stride_count * mem::size_of::<f32>() as i32;
-
-    vertex_buffer.bind(&gl);
-    let mut offset = 0;
-    for attr in attrs.iter() {
-        attr.setup(&gl, stride_size, offset, data_type);
-        offset += attr.size;
-    }
-}
-
 pub struct VertexArray {
     /// Vertex Array
     vao: Option<VertexArrayId>,
@@ -69,7 +83,7 @@ impl VertexArray {
     /// to setup `VertexAttribute` in relation to some `Buffer`.
     pub fn new(
         gl: &Context,
-        vertex_bindings: &[(&Buffer, &[VertexAttribute])],
+        vertex_buffers_layout: &[&BufferLayout],
         element_buffer: &Buffer,
     ) -> Result<Self, RenderError> {
         let vao = Some(unsafe { gl.create_vertex_array()? });
@@ -77,8 +91,8 @@ impl VertexArray {
 
         element_buffer.bind(&gl);
 
-        for (vertex_buffer, vertex_attributes) in vertex_bindings.iter() {
-            setup_vertex_attributes(&gl, glow::FLOAT, &vertex_attributes, &vertex_buffer);
+        for layout in vertex_buffers_layout.iter() {
+            layout.setup(&gl);
         }
 
         unsafe {

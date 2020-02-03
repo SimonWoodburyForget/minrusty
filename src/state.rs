@@ -24,6 +24,7 @@ impl<'a> System<'a> for TileSystem {
         ReadStorage<'a, Identity>,
         ReadStorage<'a, Position>,
         ReadStorage<'a, Tile>,
+        ReadStorage<'a, RenderId>,
     );
 
     fn run(&mut self, _data: Self::SystemData) {
@@ -66,6 +67,7 @@ impl GameState {
             .with(Identity(name.into().to_string()))
             .with(Position(Vec3::new(x, y, 1.0)))
             .with(Tile)
+            .with(RenderId(None))
             .build();
     }
 

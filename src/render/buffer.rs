@@ -37,8 +37,16 @@ impl Buffer {
         unimplemented!();
     }
 
-    pub fn _update<T>(_gl: &Context, _buffer_type: u32, _data: &[T]) -> Result<(), RenderError> {
-        unimplemented!();
+    pub fn update<T>(&self, gl: &Context, data: &[T]) {
+        debug_assert!(data.len() <= self.size);
+
+        let (head, body, tail) = unsafe { data.align_to::<u8>() };
+        assert!(head.is_empty());
+        assert!(tail.is_empty());
+
+        self.bind(&gl);
+        unsafe { gl.buffer_sub_data_u8_slice(self.buffer_type, 0, body) };
+        self.unbind(&gl);
     }
 
     pub fn bind(&self, gl: &Context) {
@@ -47,7 +55,7 @@ impl Buffer {
         }
     }
 
-    pub fn _unbind(&self, gl: &Context) {
+    pub fn unbind(&self, gl: &Context) {
         unsafe {
             gl.bind_buffer(self.buffer_type, None);
         }

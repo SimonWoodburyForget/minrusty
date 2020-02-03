@@ -22,3 +22,7 @@ pub struct Color(pub Vec4<f32>);
 /// An internal name used to bundle assets together.
 #[derive(Component, Clone, Debug)]
 pub struct Identity(pub String);
+
+/// Identity of entity for rendering.
+#[derive(Component, Clone, Copy, Debug)]
+pub struct RenderId(pub Option<usize>);

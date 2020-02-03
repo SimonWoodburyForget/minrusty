@@ -34,16 +34,19 @@ use vek::Mat4;
 pub struct Renderer {
     gl: Context,
 
-    tx: Texture,
-    va: VertexArray,
-    pg: Program,
+    texture: Texture,
+    vertex_array: VertexArray,
+    program: Program,
+
+    instance_data: Vec<f32>,
+    instance_buffer_layout: BufferLayout,
 }
 
 impl Renderer {
     pub fn new(gl: Context) -> Result<Self, RenderError> {
-        let (vert_pos, text_pos, tile_pos) = (0, 1, 2);
+        let (vert_pos, text_pos, tile_pos, tile_size) = (0, 1, 2, 3);
 
-        let pg = Program::new(
+        let program = Program::new(
             &gl,
             include_str!("shaders/vss.glsl"),
             include_str!("shaders/fss.glsl"),
@@ -51,6 +54,7 @@ impl Renderer {
                 (vert_pos, "vert_pos"),
                 (text_pos, "text_pos"),
                 (tile_pos, "tile_pos"),
+                (tile_size, "tile_size"),
             ],
         )?;
 
@@ -64,22 +68,23 @@ impl Renderer {
             load_bytes(include_bytes!("../../assets/c.png")),
         ];
 
-        let tx = Texture::from_images(&gl, &images)?;
+        let texture = Texture::from_images(&gl, &images)?;
 
         #[rustfmt::skip]
         let vertices = [
-             // square 1 
              // pos       // texture
              0.5,  0.5,   1.0,  1.0, // top right
              0.5, -0.5,   1.0,  0.0, // bottom right
             -0.5,  0.5,   0.0,  1.0, // top left
             -0.5, -0.5,   0.0,  0.0_f32, // bottom left
         ];
-        let vertex_buffer = Buffer::immutable(&gl, glow::ARRAY_BUFFER, &vertices)?;
-        let vertex_buffer_attributes = [
-            VertexAttribute::new(vert_pos, 2),
-            VertexAttribute::new(text_pos, 2),
-        ];
+        let vertex_buffer_layout = BufferLayout::new(
+            Buffer::immutable(&gl, glow::ARRAY_BUFFER, &vertices)?,
+            vec![
+                VertexAttribute::new(vert_pos, 2),
+                VertexAttribute::new(text_pos, 2),
+            ],
+        );
 
         #[rustfmt::skip]
         let indices: [u32; 6] = [
@@ -89,44 +94,60 @@ impl Renderer {
         let element_buffer = Buffer::immutable(&gl, glow::ELEMENT_ARRAY_BUFFER, &indices)?;
 
         #[rustfmt::skip]
-        let instance_positions = [
-            0.0, 0.0_f32,
-            0.0, 1.0,
-            0.0, 2.0,
-            0.0, 3.0,
-            0.0, 4.0,
-            0.0, 5.0,
+        let instance_data = vec![
+            // pos     // size
+            0.0, 0.0,  2.0_f32,
+            0.0, 1.0,  1.0,
+            0.0, 2.0,  1.0,
+            0.0, 3.0,  1.0,
+            0.0, 4.0,  1.0,
+            0.0, 5.0,  1.0,
         ];
-        let instance_buffer = Buffer::immutable(&gl, glow::ARRAY_BUFFER, &instance_positions)?;
-        let instance_buffer_attributes = [
-            VertexAttribute::new(tile_pos, 2).with_div(1), // tiling
-        ];
+        let instance_buffer_layout = BufferLayout::new(
+            Buffer::immutable(&gl, glow::ARRAY_BUFFER, &instance_data)?,
+            vec![
+                VertexAttribute::new(tile_pos, 2).with_div(1),
+                VertexAttribute::new(tile_size, 1).with_div(1),
+            ],
+        );
 
-        let va = {
-            let bindings = &[
-                (&instance_buffer, instance_buffer_attributes.as_ref()),
-                (&vertex_buffer, vertex_buffer_attributes.as_ref()),
-            ];
+        let vertex_array = {
+            let bindings = &[&instance_buffer_layout, &vertex_buffer_layout];
 
             VertexArray::new(&gl, bindings, &element_buffer)
         }?;
 
-        Ok(Self { va, pg, tx, gl })
+        Ok(Self {
+            vertex_array,
+            program,
+            texture,
+
+            instance_data,
+            instance_buffer_layout,
+
+            gl,
+        })
     }
 
     pub fn render<'a>(
-        &self,
-        (start, screen_size, ent, positions): (
+        &mut self,
+        (start, screen_size, ent, positions, mut id): (
             Read<'a, GameStart>,
             Read<'a, ScreenSize>,
             Entities<'a>,
             ReadStorage<'a, Position>,
+            WriteStorage<'a, RenderId>,
         ),
     ) {
-        let Self { va, pg, tx, gl } = self;
+        let Self {
+            gl,
+            ref mut instance_data,
+            instance_buffer_layout,
+            ..
+        } = self;
 
         let mut pos_vec = Vec::new();
-        for (_, pos) in (&*ent, &positions).join() {
+        for (_, pos, ref mut id) in (&*ent, &positions, &mut id).join() {
             pos_vec.push(pos.0);
         }
 
@@ -134,6 +155,9 @@ impl Renderer {
         let sec_from_start = elapsed.as_secs() as f32 + elapsed.subsec_nanos() as f32 * 1e-9;
 
         let scale = sec_from_start.sin();
+
+        instance_data[0] = scale;
+        instance_buffer_layout.buffer.update(&gl, &instance_data);
 
         #[allow(dead_code)]
         let ScreenSize((w, h)) = *screen_size;
@@ -148,11 +172,11 @@ impl Renderer {
             #[cfg(feature = "nat")]
             gl.viewport(0, 0, w as _, h as _);
 
-            pg.use_program(&gl);
-            // pg.set_uniform(&gl, "ourColor", Vec4::new(0.0, green, 0.0, 1.0));
-            pg.set_uniform(&gl, "transform", m);
-            tx.bind(&gl);
-            va.bind(&gl);
+            self.program.use_program(&gl);
+            // program.set_uniform(&gl, "ourColor", Vec4::new(0.0, green, 0.0, 1.0));
+            self.program.set_uniform(&gl, "transform", m);
+            self.texture.bind(&gl);
+            self.vertex_array.bind(&gl);
             // gl.draw_arrays(glow::TRIANGLES, 0, 6);
             gl.draw_elements_instanced(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0, 4);
 

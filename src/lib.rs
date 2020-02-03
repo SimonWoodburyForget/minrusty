@@ -39,7 +39,7 @@ pub fn main() {
     game.create_block(1., 1., "core");
 
     let event_loop = winit::event_loop::EventLoop::new();
-    let (window, renderer) = Window::new(&event_loop).unwrap();
+    let (window, mut renderer) = Window::new(&event_loop).unwrap();
     game.ecs.insert(ScreenSize(window.dimensions()));
 
     event_loop.run(move |event, _, control_flow| {
