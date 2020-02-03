@@ -64,7 +64,7 @@ pub fn main() {
             },
 
             Event::RedrawRequested(_) => {
-                renderer.render(game.ecs.system_data());
+                renderer.render(game.ecs.system_data()).unwrap();
                 window.on_event(window::Event::Draw);
             }
 

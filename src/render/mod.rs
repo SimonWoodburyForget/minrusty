@@ -138,12 +138,21 @@ impl Renderer {
             ReadStorage<'a, Position>,
             WriteStorage<'a, RenderId>,
         ),
-    ) {
+    ) -> Result<(), RenderError> {
         let Self { gl, .. } = self;
 
         let mut pos_vec = Vec::new();
-        for (_, pos, ref mut id) in (&*ent, &positions, &mut id).join() {
+        for (_, pos, id) in (&*ent, &positions, &mut id).join() {
             pos_vec.push(pos.0);
+
+            if let RenderId(None) = id {
+                *id = RenderId(Some(self.instance_buffer.next_free()?));
+            }
+
+            let x = pos.0.x;
+            let y = pos.0.y;
+            self.instance_buffer
+                .update_slice(&gl, id.0.unwrap(), &[x, y]);
         }
 
         let elapsed = start.0.elapsed();
@@ -151,7 +160,7 @@ impl Renderer {
 
         let scale = sec_from_start.sin();
 
-        self.instance_buffer.update(&gl, 0, scale);
+        // self.instance_buffer.update_slice(&gl, 0, &[scale, scale]);
 
         #[allow(dead_code)]
         let ScreenSize((w, h)) = *screen_size;
@@ -177,5 +186,7 @@ impl Renderer {
             // gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
             gl.bind_vertex_array(None);
         }
+
+        Ok(())
     }
 }
