@@ -4,31 +4,38 @@ use glow::*;
 use std::mem;
 
 pub struct BufferLayout {
-    pub buffer: Buffer,
+    buffer: Buffer,
     vertex_attributes: Vec<VertexAttribute>,
+    data: Vec<f32>,
+    stride_size: i32,
 }
 
 impl BufferLayout {
-    pub fn new(buffer: Buffer, vertex_attributes: Vec<VertexAttribute>) -> Self {
+    pub fn new(buffer: Buffer, vertex_attributes: Vec<VertexAttribute>, data: Vec<f32>) -> Self {
+        let stride_count = vertex_attributes.iter().map(|attr| attr.size).sum::<i32>();
+        let stride_size = stride_count * mem::size_of::<f32>() as i32;
+
         Self {
             buffer,
             vertex_attributes,
+            stride_size,
+            data,
         }
+    }
+
+    /// stupid simple update function, pushes one change to the buffer right away
+    pub fn update(&mut self, gl: &Context, index: usize, value: f32) {
+        self.data[index] = value;
+        self.buffer.update(&gl, &self.data);
     }
 
     pub fn setup(&self, gl: &Context) {
         let data_type = glow::FLOAT;
-        let stride_count = self
-            .vertex_attributes
-            .iter()
-            .map(|attr| attr.size)
-            .sum::<i32>();
-        let stride_size = stride_count * mem::size_of::<f32>() as i32;
 
         self.buffer.bind(&gl);
         let mut offset = 0;
         for attr in self.vertex_attributes.iter() {
-            attr.setup(&gl, stride_size, offset, data_type);
+            attr.setup(&gl, self.stride_size, offset, data_type);
             offset += attr.size;
         }
     }

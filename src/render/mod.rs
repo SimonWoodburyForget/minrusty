@@ -38,8 +38,7 @@ pub struct Renderer {
     vertex_array: VertexArray,
     program: Program,
 
-    instance_data: Vec<f32>,
-    instance_buffer_layout: BufferLayout,
+    instance_buffer: BufferLayout,
 }
 
 impl Renderer {
@@ -71,7 +70,7 @@ impl Renderer {
         let texture = Texture::from_images(&gl, &images)?;
 
         #[rustfmt::skip]
-        let vertices = [
+        let vertices = vec![
              // pos       // texture
              0.5,  0.5,   1.0,  1.0, // top right
              0.5, -0.5,   1.0,  0.0, // bottom right
@@ -84,6 +83,7 @@ impl Renderer {
                 VertexAttribute::new(vert_pos, 2),
                 VertexAttribute::new(text_pos, 2),
             ],
+            vertices,
         );
 
         #[rustfmt::skip]
@@ -103,16 +103,17 @@ impl Renderer {
             0.0, 4.0,  1.0,
             0.0, 5.0,  1.0,
         ];
-        let instance_buffer_layout = BufferLayout::new(
+        let instance_buffer = BufferLayout::new(
             Buffer::immutable(&gl, glow::ARRAY_BUFFER, &instance_data)?,
             vec![
                 VertexAttribute::new(tile_pos, 2).with_div(1),
                 VertexAttribute::new(tile_size, 1).with_div(1),
             ],
+            instance_data,
         );
 
         let vertex_array = {
-            let bindings = &[&instance_buffer_layout, &vertex_buffer_layout];
+            let bindings = &[&instance_buffer, &vertex_buffer_layout];
 
             VertexArray::new(&gl, bindings, &element_buffer)
         }?;
@@ -122,8 +123,7 @@ impl Renderer {
             program,
             texture,
 
-            instance_data,
-            instance_buffer_layout,
+            instance_buffer,
 
             gl,
         })
@@ -139,12 +139,7 @@ impl Renderer {
             WriteStorage<'a, RenderId>,
         ),
     ) {
-        let Self {
-            gl,
-            ref mut instance_data,
-            instance_buffer_layout,
-            ..
-        } = self;
+        let Self { gl, .. } = self;
 
         let mut pos_vec = Vec::new();
         for (_, pos, ref mut id) in (&*ent, &positions, &mut id).join() {
@@ -156,8 +151,7 @@ impl Renderer {
 
         let scale = sec_from_start.sin();
 
-        instance_data[0] = scale;
-        instance_buffer_layout.buffer.update(&gl, &instance_data);
+        self.instance_buffer.update(&gl, 0, scale);
 
         #[allow(dead_code)]
         let ScreenSize((w, h)) = *screen_size;
