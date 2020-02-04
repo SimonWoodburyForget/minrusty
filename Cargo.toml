@@ -22,6 +22,7 @@ nat = ["glow/glutin", "glutin", "specs/parallel"]
 specs-derive = "0.4.0"
 vek = "0.9"
 image = "0.22"
+shrev = "1.1"
 
 [dependencies.specs]
 version = "0.15"

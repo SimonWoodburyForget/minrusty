@@ -1,4 +1,5 @@
 use crate::components::*;
+use crate::input::*;
 use instant;
 use specs::prelude::*;
 use std::borrow::Cow;
@@ -48,6 +49,7 @@ impl GameState {
 
         let mut dispatcher = DispatcherBuilder::new()
             .with(TileSystem, "tile-system", &[])
+            .with(InputSystem(None), "input-system", &[])
             .build();
         dispatcher.setup(&mut world);
 

@@ -3,6 +3,7 @@ mod error;
 mod main_web;
 // mod platform;
 mod components;
+mod input;
 mod render;
 mod state;
 mod window;
@@ -10,6 +11,7 @@ mod window;
 pub use error::Error;
 use window::Window;
 
+use shrev::*;
 use specs::prelude::*;
 
 #[cfg(feature = "web")]
@@ -53,13 +55,17 @@ pub fn main() {
             *ss = ScreenSize(window.dimensions());
         }
 
-        use winit::event::Event;
-        use winit::event::WindowEvent;
+        use winit::event::{Event, KeyboardInput, WindowEvent};
 
         match event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
                 // WindowEvent::Resized(ref size) => crate::log(&format!("{:?}", size)),
+                WindowEvent::KeyboardInput { input, .. } => {
+                    game.ecs
+                        .write_resource::<EventChannel<KeyboardInput>>()
+                        .single_write(input);
+                }
                 _ => (),
             },
 
