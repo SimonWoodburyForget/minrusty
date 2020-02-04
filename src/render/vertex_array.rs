@@ -56,6 +56,8 @@ impl BufferLayout {
     pub fn update_slice(&mut self, gl: &Context, id: usize, values: &[f32]) {
         let index = id * self.stride_count;
 
+        // NOTE: this is probably a redundant operation, we could just send sub
+        // slices directly to OpenGL, instead of the entire buffer.
         for (a, b) in self.data[index..].iter_mut().zip(values.iter()) {
             *a = *b;
         }

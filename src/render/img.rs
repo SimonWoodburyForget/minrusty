@@ -10,7 +10,6 @@ pub fn load_bytes(bytes: &[u8]) -> DynamicImage {
         .expect("Cursor io never fails!")
         .decode()
         .unwrap()
-        // TODO:
-        // - handle images of varying sizes
+        // TODO: handle images of varying sizes
         .resize(32, 32, FilterType::Nearest)
 }

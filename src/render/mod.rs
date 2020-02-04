@@ -28,7 +28,7 @@ use crate::state::GameStart;
 use crate::ScreenSize;
 use specs::prelude::*;
 
-use vek::Mat4;
+use vek::*;
 
 /// Type which holds onto the OpenGL context, and the various objects that surrounds it.
 pub struct Renderer {
@@ -158,15 +158,21 @@ impl Renderer {
         let elapsed = start.0.elapsed();
         let sec_from_start = elapsed.as_secs() as f32 + elapsed.subsec_nanos() as f32 * 1e-9;
 
-        let scale = sec_from_start.sin();
-
-        // self.instance_buffer.update_slice(&gl, 0, &[scale, scale]);
+        let scale = 0.3 * sec_from_start.sin();
 
         #[allow(dead_code)]
         let ScreenSize((w, h)) = *screen_size;
 
-        let mut m = Mat4::identity();
-        m.scale_3d(scale);
+        // let trans = Mat4::translation_3d(Vec3::new(1., 1., 1.));
+        // #[rustfmt::skip]
+        // let trans = Mat4::new(1.0, 0.0, 0.0, 0.0,
+        //                       0.0, 1.0, 0.0, 0.0,
+        //                       0.0, 0.0, 1.0, 0.0,
+        //                       0.0, 0.0, 0.0, 1.0);
+
+        let scale = Mat4::scaling_3d(Vec3::new(0.3, 0.3, 1.0));
+
+        let m = scale;
 
         unsafe {
             gl.clear(glow::COLOR_BUFFER_BIT);
