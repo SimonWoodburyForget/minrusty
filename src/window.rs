@@ -95,14 +95,21 @@ impl Window {
         #[cfg(feature = "web")]
         {
             let canvas = self.window.canvas();
-            (canvas.client_width() as _, canvas.client_height() as _)
+            let (w, h) = (canvas.client_width() as u32, canvas.client_height() as u32);
+
+            // NOTE: canvas doesn't expect to be resized by the user, but we use CSS to
+            // resize it, which doesn't fire any events, so this is required to maintain.
+            canvas.set_width(w);
+            canvas.set_height(h);
+
+            (w as _, h as _)
         }
 
         #[cfg(feature = "nat")]
         {
             let winit::dpi::PhysicalSize { width, height } =
                 self.windowed_context.window().inner_size();
-            (width as _, height)
+            (width, height)
         }
     }
 

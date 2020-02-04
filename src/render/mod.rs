@@ -170,9 +170,6 @@ impl Renderer {
 
         unsafe {
             gl.clear(glow::COLOR_BUFFER_BIT);
-
-            // using this on web makes things weird
-            #[cfg(feature = "nat")]
             gl.viewport(0, 0, w as _, h as _);
 
             self.program.use_program(&gl);

@@ -59,6 +59,9 @@ impl Program {
 
             for (_, _, shader_id) in shader_data.iter() {
                 let shader = shader_id.expect("shader_id is None, when it should of compiled.");
+
+                // FIXME: why does this break on web targets?
+                #[cfg(feature = "nat")]
                 gl.detach_shader(program_id, shader);
             }
         }
