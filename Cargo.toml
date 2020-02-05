@@ -16,6 +16,9 @@ crate-type = ["cdylib", "rlib"]
 web = ["glow/web-sys", "winit/web-sys", "web-sys", "wasm-bindgen", "instant/wasm-bindgen"]
 nat = ["glow/glutin", "glutin", "specs/parallel"]
 
+# NOTE: native is default to prevent IDE related problems.
+default = ["nat"]
+
 ################################################################
 # Native and Web Dependencies
 [dependencies]
@@ -28,7 +31,8 @@ shrev = "1.1"
 version = "0.15"
 features = ["specs-derive"]
 
-# remove parallel feature for Wasm target
+# NOTE: remove parallel feature from specs for Wasm target
+# because it causes errors when using Dispatcher.
 default-features = false
 
 [dependencies.glow]
