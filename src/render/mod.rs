@@ -158,7 +158,7 @@ impl Renderer {
         let elapsed = start.0.elapsed();
         let sec_from_start = elapsed.as_secs() as f32 + elapsed.subsec_nanos() as f32 * 1e-9;
 
-        let scale = 0.3 * sec_from_start.sin();
+        let _scale = 0.3 * sec_from_start.sin();
 
         #[allow(dead_code)]
         let ScreenSize((w, h)) = *screen_size;

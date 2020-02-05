@@ -1,12 +1,20 @@
 use specs::prelude::*;
 use specs::Component;
-use vek::{Vec3, Vec4};
+use vek::*;
 
 #[derive(Component, Clone, Debug)]
 pub struct Tile;
 
 #[derive(Component, Clone, Debug)]
 pub struct Camera;
+
+/// Marks entity to be affected by player inputs.
+#[derive(Component, Default)]
+#[storage(NullStorage)]
+pub struct Control;
+
+#[derive(Component, Default)]
+pub struct Velocity(pub Vec2<f32>);
 
 /// Position in 3D space.
 #[derive(Component, Clone, Debug)]
