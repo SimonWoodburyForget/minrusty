@@ -2,6 +2,7 @@ use crate::components::*;
 use crate::input::*;
 use crate::physics::*;
 use crate::player::*;
+use crate::units::*;
 
 use instant;
 use specs::prelude::*;
@@ -43,8 +44,8 @@ impl GameState {
 
         let mut dispatcher = DispatcherBuilder::new()
             .with(InputSystem(None), "input-system", &[])
-            .with(PlayerSystem, "player-system", &[])
-            .with(PhysicSystem, "physic-system", &[])
+            .with(PlayerSystem, "player-system", &["input-system"])
+            .with(PhysicSystem, "physic-system", &["player-system"])
             .build();
         dispatcher.setup(&mut world);
 

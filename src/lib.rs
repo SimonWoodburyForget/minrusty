@@ -52,8 +52,6 @@ pub fn main() {
         use winit::event_loop::ControlFlow;
         *control_flow = ControlFlow::Poll;
 
-        game.update();
-
         {
             let mut ss = game.ecs.write_resource::<ScreenSize>();
             *ss = ScreenSize(window.dimensions());
@@ -74,6 +72,7 @@ pub fn main() {
             },
 
             Event::RedrawRequested(_) => {
+                game.update();
                 renderer.render(game.ecs.system_data()).unwrap();
                 window.on_event(window::Event::Draw);
             }

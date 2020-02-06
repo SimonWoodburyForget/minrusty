@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Seconds<T>(pub T);
 impl From<instant::Duration> for Seconds<f32> {
     fn from(dt: instant::Duration) -> Self {
