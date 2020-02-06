@@ -1,5 +1,6 @@
 use shrev::*;
 use specs::prelude::*;
+use vek::*;
 
 use winit::event::{ElementState as ES, KeyboardInput, VirtualKeyCode as VKC};
 
@@ -10,6 +11,21 @@ pub struct InputState {
     pub down: bool,
     pub left: bool,
     pub right: bool,
+}
+
+impl From<InputState> for Vec2<f32> {
+    /// Turns a input state into a unit vector.
+    fn from(state: InputState) -> Self {
+        #[rustfmt::skip]
+        let InputState { up, down, left, right } = state;
+        let to_float = |x| if x { 1.0 } else { 0.0 };
+
+        Vec2::new(
+            to_float(up) - to_float(down),
+            to_float(left) - to_float(right),
+        )
+        .normalized()
+    }
 }
 
 #[derive(Default)]
