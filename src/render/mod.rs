@@ -131,10 +131,10 @@ impl Renderer {
 
     pub fn render<'a>(
         &mut self,
-        (start, screen_size, ent, positions, mut id): (
+        (ent, start, screen_size, positions, mut id): (
+            Entities<'a>,
             Read<'a, GameStart>,
             Read<'a, ScreenSize>,
-            Entities<'a>,
             ReadStorage<'a, Position>,
             WriteStorage<'a, RenderId>,
         ),
@@ -155,10 +155,9 @@ impl Renderer {
                 .update_slice(&gl, id.0.unwrap(), &[x, y]);
         }
 
-        let elapsed = start.0.elapsed();
-        let sec_from_start = elapsed.as_secs() as f32 + elapsed.subsec_nanos() as f32 * 1e-9;
+        let seconds = crate::units::Seconds::<f32>::from(start.0.elapsed());
 
-        let _scale = 0.3 * sec_from_start.sin();
+        let _scale = 0.3 * seconds.0.sin();
 
         #[allow(dead_code)]
         let ScreenSize((w, h)) = *screen_size;

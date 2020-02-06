@@ -4,8 +4,11 @@ mod main_web;
 // mod platform;
 mod components;
 mod input;
+mod physics;
+mod player;
 mod render;
 mod state;
+mod units;
 mod window;
 
 pub use error::Error;
@@ -39,6 +42,7 @@ pub fn main() {
     let mut game = state::GameState::new();
     game.create_block(0., 1., "wall");
     game.create_block(1., 1., "core");
+    game.create_player();
 
     let event_loop = winit::event_loop::EventLoop::new();
     let (window, mut renderer) = Window::new(&event_loop).unwrap();

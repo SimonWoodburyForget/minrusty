@@ -15,15 +15,15 @@ pub struct InputState {
 
 impl From<InputState> for Vec2<f32> {
     /// Converts InputState into a unit vector, (Vec2 with a lenght of 1) if a button
-    /// is pressed otherwise it returns zero vector; which can be used as velocity.
+    /// is pressed otherwise it returns zero vector.
     fn from(state: InputState) -> Self {
-        #[rustfmt::skip]
-        let InputState { up, down, left, right } = state;
         let to_float = |x| if x { 1.0 } else { 0.0 };
 
+        #[rustfmt::skip]
+        let InputState { up, down, left, right } = state;
         Vec2::new(
+            to_float(right) - to_float(left),
             to_float(up) - to_float(down),
-            to_float(left) - to_float(right),
         )
         .try_normalized()
         .unwrap_or(Vec2::zero())
@@ -39,6 +39,7 @@ impl<'a> System<'a> for InputSystem {
     fn run(&mut self, (channel, mut state): Self::SystemData) {
         for event in channel.read(&mut self.0.as_mut().unwrap()) {
             let p = event.state == ES::Pressed;
+
             if let Some(key) = event.virtual_keycode {
                 match key {
                     VKC::Up => state.up = p,
@@ -55,6 +56,14 @@ impl<'a> System<'a> for InputSystem {
 
     fn setup(&mut self, world: &mut World) {
         Self::SystemData::setup(world);
+
+        #[cfg(debug)]
+        {
+            if self.0.is_some() {
+                panic!("InputSystem setup found Some(..) where None was expected.");
+            }
+        }
+
         self.0 = Some(
             world
                 .fetch_mut::<EventChannel<KeyboardInput>>()

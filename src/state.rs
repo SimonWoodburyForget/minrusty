@@ -1,9 +1,12 @@
 use crate::components::*;
 use crate::input::*;
+use crate::physics::*;
+use crate::player::*;
+
 use instant;
 use specs::prelude::*;
 use std::borrow::Cow;
-use vek::Vec3;
+use vek::*;
 
 /// Duration between current and last instants.
 #[derive(Default)]
@@ -40,6 +43,8 @@ impl GameState {
 
         let mut dispatcher = DispatcherBuilder::new()
             .with(InputSystem(None), "input-system", &[])
+            .with(PlayerSystem, "player-system", &[])
+            .with(PhysicSystem, "physic-system", &[])
             .build();
         dispatcher.setup(&mut world);
 
@@ -59,6 +64,16 @@ impl GameState {
             .with(Identity(name.into().to_string()))
             .with(Position(Vec3::new(x, y, 1.0)))
             .with(Tile)
+            .with(RenderId(None))
+            .build();
+    }
+
+    pub fn create_player(&mut self) {
+        self.ecs
+            .create_entity()
+            .with(Position(Vec3::new(0.0, 0.0, 2.0)))
+            .with(Velocity(Vec2::zero()))
+            .with(Control)
             .with(RenderId(None))
             .build();
     }
