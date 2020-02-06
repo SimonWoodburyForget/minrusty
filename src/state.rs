@@ -73,6 +73,7 @@ impl GameState {
             .create_entity()
             .with(Position(Vec3::new(0.0, 0.0, 2.0)))
             .with(Velocity(Vec2::zero()))
+            .with(Force(Vec2::zero()))
             .with(Control)
             .with(RenderId(None))
             .build();

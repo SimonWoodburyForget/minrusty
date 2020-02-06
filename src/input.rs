@@ -50,8 +50,6 @@ impl<'a> System<'a> for InputSystem {
                 }
             }
         }
-
-        crate::log(&format!("{:?}", Vec2::<f32>::from(*state)));
     }
 
     fn setup(&mut self, world: &mut World) {

@@ -13,6 +13,9 @@ pub struct Camera;
 #[storage(NullStorage)]
 pub struct Control;
 
+#[derive(Component)]
+pub struct Force(pub Vec2<f32>);
+
 #[derive(Component, Default)]
 pub struct Velocity(pub Vec2<f32>);
 

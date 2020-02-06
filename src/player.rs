@@ -8,16 +8,16 @@ pub struct PlayerSystem;
 
 impl<'a> System<'a> for PlayerSystem {
     type SystemData = (
-        WriteStorage<'a, Velocity>,
+        WriteStorage<'a, Force>,
         ReadStorage<'a, Control>,
         Read<'a, InputState>,
         // ..
     );
 
-    fn run(&mut self, (mut velocities, control, input): Self::SystemData) {
+    fn run(&mut self, (mut forces, control, input): Self::SystemData) {
         let input_vec = Vec2::from(*input) * 0.1;
-        for (vel, _) in (&mut velocities, &control).join() {
-            vel.0 += input_vec;
+        for (f, _) in (&mut forces, &control).join() {
+            f.0 += input_vec;
         }
     }
 }
