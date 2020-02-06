@@ -5,7 +5,7 @@ use vek::*;
 use winit::event::{ElementState as ES, KeyboardInput, VirtualKeyCode as VKC};
 
 /// Represents the direction the player wants to go.
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct InputState {
     pub up: bool,
     pub down: bool,
@@ -14,7 +14,8 @@ pub struct InputState {
 }
 
 impl From<InputState> for Vec2<f32> {
-    /// Turns a input state into a unit vector.
+    /// Converts InputState into a unit vector, (Vec2 with a lenght of 1) if a button
+    /// is pressed otherwise it returns zero vector; which can be used as velocity.
     fn from(state: InputState) -> Self {
         #[rustfmt::skip]
         let InputState { up, down, left, right } = state;
@@ -24,7 +25,8 @@ impl From<InputState> for Vec2<f32> {
             to_float(up) - to_float(down),
             to_float(left) - to_float(right),
         )
-        .normalized()
+        .try_normalized()
+        .unwrap_or(Vec2::zero())
     }
 }
 
@@ -48,7 +50,7 @@ impl<'a> System<'a> for InputSystem {
             }
         }
 
-        crate::log(&format!("{:?}", *state))
+        crate::log(&format!("{:?}", Vec2::<f32>::from(*state)));
     }
 
     fn setup(&mut self, world: &mut World) {
