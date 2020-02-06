@@ -18,21 +18,6 @@ impl Default for GameStart {
     }
 }
 
-// .. eventually?
-pub struct TileSystem;
-impl<'a> System<'a> for TileSystem {
-    type SystemData = (
-        ReadStorage<'a, Identity>,
-        ReadStorage<'a, Position>,
-        ReadStorage<'a, Tile>,
-        ReadStorage<'a, RenderId>,
-    );
-
-    fn run(&mut self, _data: Self::SystemData) {
-        // ..
-    }
-}
-
 pub struct GameState {
     pub ecs: World,
     dis: Dispatcher<'static, 'static>,
@@ -44,11 +29,16 @@ pub struct GameState {
 impl GameState {
     pub fn new() -> Self {
         let mut world = World::new();
+
+        world.register::<Position>();
+        world.register::<Identity>();
+        world.register::<Tile>();
+        world.register::<RenderId>();
+
         world.insert(GameStart::default());
         world.insert(DeltaTime::default());
 
         let mut dispatcher = DispatcherBuilder::new()
-            .with(TileSystem, "tile-system", &[])
             .with(InputSystem(None), "input-system", &[])
             .build();
         dispatcher.setup(&mut world);
