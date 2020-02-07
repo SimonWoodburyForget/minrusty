@@ -6,6 +6,8 @@ use wasm_bindgen::JsCast;
 #[cfg(feature = "web")]
 use winit::platform::web::WindowExtWebSys;
 
+use crate::gfx_ex::*;
+
 pub enum Event {
     /// Aften the window is drawn.
     Draw,
@@ -23,10 +25,16 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> Result<(Self, Renderer), Error> {
+    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> Result<(Self, ()), Error> {
         // initialize a native context with glutin
         #[cfg(feature = "nat")]
         {
+            let builder = backend::config_context(
+                backend::glutin::ContextBuilder::new(),
+                ColorFormat::SELF,
+                None,
+            );
+
             let window_builder = glutin::window::WindowBuilder::new()
                 .with_title("Minrusty")
                 .with_inner_size(glutin::dpi::LogicalSize::new(1024.0, 768.0));
@@ -37,10 +45,7 @@ impl Window {
                 .unwrap();
             let windowed_context = unsafe { windowed_context.make_current().unwrap() };
 
-            let context = glow::Context::from_loader_function(|s| {
-                windowed_context.get_proc_address(s) as *const _
-            });
-            let renderer = Renderer::new(context)?;
+            let renderer = ();
 
             Ok((Self { windowed_context }, renderer))
         }
@@ -48,6 +53,8 @@ impl Window {
         // initialize a web context with web-sys
         #[cfg(feature = "web")]
         {
+            // TODO
+            unimplemented!();
             let window = winit::window::WindowBuilder::new()
                 .with_title("Minrusty")
                 .build(&event_loop)

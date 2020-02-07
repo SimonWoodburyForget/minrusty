@@ -3,6 +3,7 @@ mod error;
 mod main_web;
 // mod platform;
 mod components;
+mod gfx_ex;
 mod input;
 mod physics;
 mod player;
@@ -45,7 +46,7 @@ pub fn main() {
     game.create_block(1., 1., "core");
 
     let event_loop = winit::event_loop::EventLoop::new();
-    let (window, mut renderer) = Window::new(&event_loop).unwrap();
+    let (window, mut _renderer) = Window::new(&event_loop).unwrap();
     game.ecs.insert(ScreenSize(window.dimensions()));
 
     event_loop.run(move |event, _, control_flow| {
@@ -73,7 +74,7 @@ pub fn main() {
 
             Event::RedrawRequested(_) => {
                 game.update();
-                renderer.render(game.ecs.system_data()).unwrap();
+                // renderer.render(game.ecs.system_data()).unwrap();
                 window.on_event(window::Event::Draw);
             }
 

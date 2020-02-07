@@ -13,8 +13,23 @@ An experimental game development side project.
 crate-type = ["cdylib", "rlib"]
 
 [features]
-web = ["glow/web-sys", "winit/web-sys", "web-sys", "wasm-bindgen", "instant/wasm-bindgen"]
-nat = ["glow/glutin", "glutin", "specs/parallel"]
+web = [
+  "gfx-backend-gl",
+  "gfx-backend-gl/wgl",
+  "glow/web-sys",
+  "winit/web-sys",
+  "web-sys",
+  "wasm-bindgen",
+  "instant/wasm-bindgen"
+]
+
+nat = [
+  "gfx-backend-gl",
+  "gfx-backend-gl/glutin",
+  "glow/glutin",
+  "glutin",
+  "specs/parallel"
+]
 
 # NOTE: native is default to prevent IDE related problems.
 default = ["nat"]
@@ -22,10 +37,18 @@ default = ["nat"]
 ################################################################
 # Native and Web Dependencies
 [dependencies]
-specs-derive = "0.4.0"
+specs-derive = "0.4"
 vek = "0.9"
 image = "0.22"
 shrev = "1.1"
+
+gfx-hal = { path = "../gfx/src/hal", version = "0.4" }
+gfx-backend-empty = { path = "../gfx/src/backend/empty", version = "0.4" }
+
+[dependencies.gfx-backend-gl]
+path = "../gfx/src/backend/gl"
+version = "0.4"
+optional = true
 
 [dependencies.specs]
 version = "0.15"
