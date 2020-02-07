@@ -6,6 +6,7 @@
 mod buffer;
 mod error;
 mod img;
+mod pipeline;
 mod program;
 mod texture;
 mod types;
@@ -15,6 +16,7 @@ mod vertex_array;
 pub use buffer::*;
 pub use error::*;
 pub use img::*;
+pub use pipeline::*;
 pub use program::*;
 pub use texture::*;
 pub use types::*;
@@ -38,7 +40,7 @@ pub struct Renderer {
     vertex_array: VertexArray,
     program: Program,
 
-    instance_buffer: BufferLayout,
+    instance_buffer: Pipeline,
 }
 
 impl Renderer {
@@ -77,7 +79,7 @@ impl Renderer {
             -0.5,  0.5,   0.0,  1.0, // top left
             -0.5, -0.5,   0.0,  0.0_f32, // bottom left
         ];
-        let vertex_buffer_layout = BufferLayout::new(
+        let vertex_buffer_layout = Pipeline::new(
             Buffer::immutable(&gl, glow::ARRAY_BUFFER, &vertices)?,
             vec![
                 VertexAttribute::new(vert_pos, 2),
@@ -103,7 +105,7 @@ impl Renderer {
             0.0, 4.0, 0.0,  1.0,
             0.0, 5.0, 0.0,  1.0,
         ];
-        let instance_buffer = BufferLayout::new(
+        let instance_buffer = Pipeline::new(
             Buffer::immutable(&gl, glow::ARRAY_BUFFER, &instance_data)?,
             vec![
                 VertexAttribute::new(tile_pos, 3).with_div(1),
