@@ -1,4 +1,6 @@
-use crate::render::RenderError;
+/// TODO
+#[derive(Clone, Debug)]
+pub struct RenderError;
 
 #[derive(Clone, Debug)]
 pub enum Error {

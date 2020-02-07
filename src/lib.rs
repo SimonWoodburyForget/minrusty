@@ -7,10 +7,12 @@ mod gfx_ex;
 mod input;
 mod physics;
 mod player;
-mod render;
+// mod render;
 mod state;
 mod units;
 mod window;
+
+mod graphics;
 
 pub use error::Error;
 use window::Window;
@@ -46,7 +48,7 @@ pub fn main() {
     game.create_block(1., 1., "core");
 
     let event_loop = winit::event_loop::EventLoop::new();
-    let (window, mut _renderer) = Window::new(&event_loop).unwrap();
+    let (window, mut renderer) = Window::new(&event_loop).unwrap();
     game.ecs.insert(ScreenSize(window.dimensions()));
 
     event_loop.run(move |event, _, control_flow| {
@@ -63,7 +65,19 @@ pub fn main() {
         match event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                // WindowEvent::Resized(ref size) => crate::log(&format!("{:?}", size)),
+                WindowEvent::Resized(size) => {
+                    #[cfg(feature = "nat")]
+                    {
+                        let context = renderer.surface.context();
+                        context.resize(size);
+                    }
+                    use crate::gfx_ex::*;
+                    renderer.dimensions = window::Extent2D {
+                        width: size.width,
+                        height: size.height,
+                    };
+                    renderer.recreate_swapchain();
+                }
                 WindowEvent::KeyboardInput { input, .. } => {
                     game.ecs
                         .write_resource::<EventChannel<KeyboardInput>>()
@@ -74,7 +88,7 @@ pub fn main() {
 
             Event::RedrawRequested(_) => {
                 game.update();
-                // renderer.render(game.ecs.system_data()).unwrap();
+                renderer.render();
                 window.on_event(window::Event::Draw);
             }
 

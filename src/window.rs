@@ -1,4 +1,4 @@
-use crate::render::Renderer;
+use crate::graphics::Renderer;
 use crate::Error;
 
 #[cfg(feature = "web")]
@@ -18,14 +18,13 @@ pub enum Event {
 
 /// Represents the games window on Web or Native.
 pub struct Window {
-    #[cfg(feature = "nat")]
-    windowed_context: glutin::ContextWrapper<glutin::PossiblyCurrent, winit::window::Window>,
-    #[cfg(feature = "web")]
     window: winit::window::Window,
 }
 
 impl Window {
-    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> Result<(Self, ()), Error> {
+    pub fn new(
+        event_loop: &winit::event_loop::EventLoop<()>,
+    ) -> Result<(Self, Renderer<backend::Backend>), Error> {
         // initialize a native context with glutin
         #[cfg(feature = "nat")]
         {
@@ -33,21 +32,25 @@ impl Window {
                 backend::glutin::ContextBuilder::new(),
                 ColorFormat::SELF,
                 None,
-            );
+            )
+            .with_vsync(true);
 
-            let window_builder = glutin::window::WindowBuilder::new()
+            let window_builder = winit::window::WindowBuilder::new()
                 .with_title("Minrusty")
-                .with_inner_size(glutin::dpi::LogicalSize::new(1024.0, 768.0));
+                .with_inner_size(winit::dpi::LogicalSize::new(1024.0, 768.0));
 
-            let windowed_context = glutin::ContextBuilder::new()
-                .with_vsync(true)
-                .build_windowed(window_builder, &event_loop)
-                .unwrap();
-            let windowed_context = unsafe { windowed_context.make_current().unwrap() };
+            let windowed_context = builder.build_windowed(window_builder, &event_loop).unwrap();
+            let (context, window) = unsafe { windowed_context.make_current().unwrap().split() };
+            let surface = backend::Surface::from_context(context);
 
-            let renderer = ();
+            let mut adapters = surface.enumerate_adapters();
+            for adapter in &adapters {
+                println!("{:?}", adapter.info);
+            }
 
-            Ok((Self { windowed_context }, renderer))
+            let adapter = adapters.remove(0);
+
+            Ok((Self { window }, Renderer::new(None, surface, adapter)))
         }
 
         // initialize a web context with web-sys
@@ -87,15 +90,7 @@ impl Window {
     }
 
     pub fn winit_window(&self) -> &winit::window::Window {
-        #[cfg(feature = "web")]
-        {
-            &self.window
-        }
-
-        #[cfg(feature = "nat")]
-        {
-            self.windowed_context.window()
-        }
+        &self.window
     }
 
     pub fn dimensions(&self) -> (u32, u32) {
@@ -114,8 +109,7 @@ impl Window {
 
         #[cfg(feature = "nat")]
         {
-            let winit::dpi::PhysicalSize { width, height } =
-                self.windowed_context.window().inner_size();
+            let winit::dpi::PhysicalSize { width, height } = self.window.inner_size();
             (width, height)
         }
     }
@@ -123,8 +117,8 @@ impl Window {
     pub fn on_event(&self, event: Event) {
         match event {
             Event::Draw => {
-                #[cfg(feature = "nat")]
-                self.windowed_context.swap_buffers().unwrap();
+                // #[cfg(feature = "nat")]
+                // self.windowed_context.swap_buffers().unwrap();
             }
 
             Event::Tick => {
