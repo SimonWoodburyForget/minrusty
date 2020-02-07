@@ -95,18 +95,18 @@ impl Renderer {
 
         #[rustfmt::skip]
         let instance_data = vec![
-            // pos     // size
-            0.0, 0.0,  2.0_f32,
-            0.0, 1.0,  1.0,
-            0.0, 2.0,  1.0,
-            0.0, 3.0,  1.0,
-            0.0, 4.0,  1.0,
-            0.0, 5.0,  1.0,
+            // pos          // size
+            0.0, 0.0, 0.0,  2.0_f32,
+            0.0, 1.0, 0.0,  1.0,
+            0.0, 2.0, 0.0,  1.0,
+            0.0, 3.0, 0.0,  1.0,
+            0.0, 4.0, 0.0,  1.0,
+            0.0, 5.0, 0.0,  1.0,
         ];
         let instance_buffer = BufferLayout::new(
             Buffer::immutable(&gl, glow::ARRAY_BUFFER, &instance_data)?,
             vec![
-                VertexAttribute::new(tile_pos, 2).with_div(1),
+                VertexAttribute::new(tile_pos, 3).with_div(1),
                 VertexAttribute::new(tile_size, 1).with_div(1),
             ],
             instance_data,
@@ -151,8 +151,9 @@ impl Renderer {
 
             let x = pos.0.x;
             let y = pos.0.y;
+            let z = pos.0.z;
             self.instance_buffer
-                .update_slice(&gl, id.0.unwrap(), &[x, y]);
+                .update_slice(&gl, id.0.unwrap(), &[x, y, z]);
         }
 
         let seconds = crate::units::Seconds::<f32>::from(start.0.elapsed());

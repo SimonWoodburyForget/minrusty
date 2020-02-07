@@ -1,7 +1,7 @@
 #version 300 es
 in vec2 vert_pos;
 in vec2 text_pos;
-in vec2 tile_pos;
+in vec3 tile_pos;
 in float tile_size;
 
 out vec2 f_text_pos;
@@ -18,7 +18,7 @@ void main() {
   mat4 tile = mat4(vec4(1.0, 0.0, 0.0, 0.0),
                    vec4(0.0, 1.0, 0.0, 0.0),
                    vec4(0.0, 0.0, 1.0, 0.0),
-                   vec4(tile_pos, 0.0, 1.0));
+                   vec4(tile_pos.xy, tile_pos.z*0.01, 1.0));
 
   mat4 size = mat4(vec4(tile_size, 0.0, 0.0, 0.0),
                    vec4(0.0, tile_size, 0.0, 0.0),

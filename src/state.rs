@@ -63,7 +63,7 @@ impl GameState {
         self.ecs
             .create_entity()
             .with(Identity(name.into().to_string()))
-            .with(Position(Vec3::new(x, y, 1.0)))
+            .with(Position(Vec3::new(x, y, -1.0)))
             .with(Tile)
             .with(RenderId(None))
             .build();
@@ -72,7 +72,7 @@ impl GameState {
     pub fn create_player(&mut self) {
         self.ecs
             .create_entity()
-            .with(Position(Vec3::new(0.0, 0.0, 2.0)))
+            .with(Position(Vec3::new(0.0, 0.0, -0.5)))
             .with(Velocity(Vec2::zero()))
             .with(Force(Vec2::zero()))
             .with(Control)
@@ -83,11 +83,11 @@ impl GameState {
     pub fn update(&mut self) {
         let now = instant::Instant::now();
         let duration = now.duration_since(self.last);
+        self.last = now;
         {
             let mut dt = self.ecs.write_resource::<DeltaTime>();
             *dt = DeltaTime(duration);
         }
-        self.last = now;
 
         self.dis.dispatch(&self.ecs);
         self.ecs.maintain();
