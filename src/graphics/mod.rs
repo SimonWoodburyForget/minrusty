@@ -1,3 +1,5 @@
+mod shaders;
+
 use crate::gfx_ex::*;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -480,10 +482,7 @@ impl<B: hal::Backend> Renderer<B> {
         );
         let pipeline = {
             let vs_module = {
-                let spirv = pso::read_spirv(Cursor::new(
-                    &include_bytes!("../../assets/quad.vert.spv")[..],
-                ))
-                .unwrap();
+                let spirv = pso::read_spirv(Cursor::new(&shaders::vs_compile()[..])).unwrap();
                 unsafe { device.create_shader_module(&spirv) }.unwrap()
             };
             let fs_module = {
