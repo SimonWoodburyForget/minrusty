@@ -486,10 +486,7 @@ impl<B: hal::Backend> Renderer<B> {
                 unsafe { device.create_shader_module(&spirv) }.unwrap()
             };
             let fs_module = {
-                let spirv = pso::read_spirv(Cursor::new(
-                    &include_bytes!("../../assets/quad.frag.spv")[..],
-                ))
-                .unwrap();
+                let spirv = pso::read_spirv(Cursor::new(&shaders::fs_compile()[..])).unwrap();
                 unsafe { device.create_shader_module(&spirv) }.unwrap()
             };
 
