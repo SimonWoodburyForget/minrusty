@@ -434,15 +434,15 @@ impl<B: hal::Backend> Renderer<B> {
         // The number of the rest of the resources is based on the frames in flight.
         let mut submission_complete_semaphores = Vec::with_capacity(frames_in_flight);
         let mut submission_complete_fences = Vec::with_capacity(frames_in_flight);
-        // Note: We don't really need a different command pool per frame in such a simple demo like this,
-        // but in a more 'real' application, it's generally seen as optimal to have one command pool per
-        // thread per frame. There is a flag that lets a command pool reset individual command buffers
-        // which are created from it, but by default the whole pool (and therefore all buffers in it)
-        // must be reset at once. Furthermore, it is often the case that resetting a whole pool is actually
-        // faster and more efficient for the hardware than resetting individual command buffers, so it's
-        // usually best to just make a command pool for each set of buffers which need to be reset at the
-        // same time (each frame). In our case, each pool will only have one command buffer created from it,
-        // though.
+        // Note: We don't really need a different command pool per frame in such a simple demo
+        // like this, but in a more 'real' application, it's generally seen as optimal to have
+        // one command pool per thread per frame. There is a flag that lets a command pool reset
+        // individual command buffers which are created from it, but by default the whole pool
+        // (and therefore all buffers in it) must be reset at once. -- Furthermore, it is often the
+        // case that resetting a whole pool is actually faster and more efficient for the hardware
+        // than resetting individual command buffers, so it's usually best to just make a command
+        // pool for each set of buffers which need to be reset at the same time (each frame). In
+        // our case, each pool will only have one command buffer created from it, though.
         let mut cmd_pools = Vec::with_capacity(frames_in_flight);
         let mut cmd_buffers = Vec::with_capacity(frames_in_flight);
 
@@ -700,13 +700,12 @@ impl<B: hal::Backend> Renderer<B> {
             cmd_buffer.end_render_pass();
             cmd_buffer.finish();
 
-            let submission = Submission {
-                command_buffers: iter::once(&*cmd_buffer),
-                wait_semaphores: None,
-                signal_semaphores: iter::once(&self.submission_complete_semaphores[frame_idx]),
-            };
             self.queue_group.queues[0].submit(
-                submission,
+                Submission {
+                    command_buffers: iter::once(&*cmd_buffer),
+                    wait_semaphores: None,
+                    signal_semaphores: iter::once(&self.submission_complete_semaphores[frame_idx]),
+                },
                 Some(&self.submission_complete_fences[frame_idx]),
             );
 
