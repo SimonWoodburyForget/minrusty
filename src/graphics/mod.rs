@@ -14,7 +14,7 @@ struct Vertex {
     a_Uv: [f32; 2],
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 const QUAD: [Vertex; 6] = [
     Vertex { a_Pos: [ -0.5, 0.33 ], a_Uv: [0.0, 1.0] },
     Vertex { a_Pos: [  0.5, 0.33 ], a_Uv: [1.0, 1.0] },
