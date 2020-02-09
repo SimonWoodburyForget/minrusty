@@ -15,22 +15,22 @@ void main() {
   
   vec4 pos = vec4(vert_pos, 1.0, 1.0);
   
-  mat4 tile = mat4(vec4(1.0, 0.0, 0.0, 0.0),
-                   vec4(0.0, 1.0, 0.0, 0.0),
-                   vec4(0.0, 0.0, 1.0, 0.0),
-                   vec4(tile_pos.xy, tile_pos.z*0.01, 1.0));
+  // mat4 tile = mat4(vec4(1.0, 0.0, 0.0, 0.0),
+  //                  vec4(0.0, 1.0, 0.0, 0.0),
+  //                  vec4(0.0, 0.0, 1.0, 0.0),
+  //                  vec4(tile_pos.xy, tile_pos.z*0.01, 1.0));
 
-  mat4 size = mat4(vec4(tile_size, 0.0, 0.0, 0.0),
-                   vec4(0.0, tile_size, 0.0, 0.0),
-                   vec4(0.0, 0.0, 1.0, 0.0),
-                   vec4(0.0, 0.0, 0.0, 1.0));
+  // mat4 size = mat4(vec4(tile_size, 0.0, 0.0, 0.0),
+  //                  vec4(0.0, tile_size, 0.0, 0.0),
+  //                  vec4(0.0, 0.0, 1.0, 0.0),
+  //                  vec4(0.0, 0.0, 0.0, 1.0));
 
-  mat4 size_pos = mat4(vec4(1.0, 0.0, 0.0, 0.0),
-                       vec4(0.0, 1.0, 0.0, 0.0),
-                       vec4(0.0, 0.0, 1.0, 0.0),
-                       vec4(tile_size/2.0,
-                            tile_size/2.0,
-                            0.0, 1.0));
+  // mat4 size_pos = mat4(vec4(1.0, 0.0, 0.0, 0.0),
+  //                      vec4(0.0, 1.0, 0.0, 0.0),
+  //                      vec4(0.0, 0.0, 1.0, 0.0),
+  //                      vec4(tile_size/2.0,
+  //                           tile_size/2.0,
+  //                           0.0, 1.0));
   
-  gl_Position = transform * size_pos * size * tile * pos;
+  gl_Position = transform * pos;
 }

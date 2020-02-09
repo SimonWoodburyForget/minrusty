@@ -54,12 +54,12 @@ impl VertexArray {
     pub fn new(
         gl: &Context,
         vertex_buffers_layout: &[&Pipeline],
-        element_buffer: &Buffer,
+        // element_buffer: &Buffer,
     ) -> Result<Self, RenderError> {
         let vao = Some(unsafe { gl.create_vertex_array()? });
         unsafe { gl.bind_vertex_array(vao) };
 
-        element_buffer.bind(&gl);
+        // element_buffer.bind(&gl);
 
         for layout in vertex_buffers_layout.iter() {
             layout.setup(&gl);

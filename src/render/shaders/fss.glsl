@@ -10,5 +10,5 @@ out vec4 color;
 uniform sampler2DArray tex;
 
 void main() {
-  color = texture(tex, vec3(f_text_pos, id));
+  color = texture(tex, vec3(f_text_pos, 1));
 }

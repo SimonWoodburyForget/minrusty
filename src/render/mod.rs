@@ -39,8 +39,6 @@ pub struct Renderer {
     texture: Texture,
     vertex_array: VertexArray,
     program: Program,
-
-    instance_buffer: Pipeline,
 }
 
 impl Renderer {
@@ -59,65 +57,42 @@ impl Renderer {
             ],
         )?;
 
-        // TODO:
-        // - bind attrib location in program
-
         let images = [
             load_bytes(include_bytes!("../../assets/a.png")),
             load_bytes(include_bytes!("../../assets/b.png")),
             load_bytes(include_bytes!("../../assets/d.png")),
             load_bytes(include_bytes!("../../assets/c.png")),
         ];
-
         let texture = Texture::from_images(&gl, &images)?;
-
+        
         #[rustfmt::skip]
-        let vertices = vec![
-             // pos       // texture
-             0.5,  0.5,   1.0,  1.0, // top right
-             0.5, -0.5,   1.0,  0.0, // bottom right
-            -0.5,  0.5,   0.0,  1.0, // top left
-            -0.5, -0.5,   0.0,  0.0_f32, // bottom left
-        ];
+        fn quad() -> [f32; 24] {
+            [
+                0.5,  0.5,   1.0, 1.0,
+                0.5, -0.5,   1.0, 0.0,
+               -0.5,  0.5,   0.0, 1.0,
+                
+                0.5, -0.5,   1.0, 0.0,
+               -0.5, -0.5,   0.0, 0.0,
+               -0.5,  0.5,   0.0, 1.0
+            ]
+        }
+        
+        let mut mesh: Vec<f32> = vec![];
+        mesh.extend(quad().iter());
+        
         let vertex_buffer_layout = Pipeline::new(
-            Buffer::immutable(&gl, glow::ARRAY_BUFFER, &vertices)?,
+            Buffer::immutable(&gl, glow::ARRAY_BUFFER, &mesh)?,
             vec![
                 VertexAttribute::new(vert_pos, 2),
                 VertexAttribute::new(text_pos, 2),
             ],
-            vertices,
-        );
-
-        #[rustfmt::skip]
-        let indices: [u32; 6] = [
-            0, 1, 2, // top right triangle
-            2, 3, 1, // buttom left triangle
-        ];
-        let element_buffer = Buffer::immutable(&gl, glow::ELEMENT_ARRAY_BUFFER, &indices)?;
-
-        #[rustfmt::skip]
-        let instance_data = vec![
-            // pos          // size
-            0.0, 0.0, 0.0,  2.0_f32,
-            0.0, 1.0, 0.0,  1.0,
-            0.0, 2.0, 0.0,  1.0,
-            0.0, 3.0, 0.0,  1.0,
-            0.0, 4.0, 0.0,  1.0,
-            0.0, 5.0, 0.0,  1.0,
-        ];
-        let instance_buffer = Pipeline::new(
-            Buffer::immutable(&gl, glow::ARRAY_BUFFER, &instance_data)?,
-            vec![
-                VertexAttribute::new(tile_pos, 3).with_div(1),
-                VertexAttribute::new(tile_size, 1).with_div(1),
-            ],
-            instance_data,
         );
 
         let vertex_array = {
-            let bindings = &[&instance_buffer, &vertex_buffer_layout];
+            let bindings = &[&vertex_buffer_layout];
 
-            VertexArray::new(&gl, bindings, &element_buffer)
+            VertexArray::new(&gl, bindings)
         }?;
 
         Ok(Self {
@@ -125,15 +100,13 @@ impl Renderer {
             program,
             texture,
 
-            instance_buffer,
-
             gl,
         })
     }
 
     pub fn render<'a>(
         &mut self,
-        (ent, start, screen_size, positions, mut id): (
+        (_ent, start, screen_size, _positions, mut _id): (
             Entities<'a>,
             Read<'a, GameStart>,
             Read<'a, ScreenSize>,
@@ -143,20 +116,20 @@ impl Renderer {
     ) -> Result<(), RenderError> {
         let Self { gl, .. } = self;
 
-        let mut pos_vec = Vec::new();
-        for (_, pos, id) in (&*ent, &positions, &mut id).join() {
-            pos_vec.push(pos.0);
+        // let mut pos_vec = Vec::new();
+        // for (_, pos, id) in (&*ent, &positions, &mut id).join() {
+        //     pos_vec.push(pos.0);
 
-            if let RenderId(None) = id {
-                *id = RenderId(Some(self.instance_buffer.next_free()?));
-            }
+        //     if let RenderId(None) = id {
+        //         *id = RenderId(Some(self.instance_buffer.next_free()?));
+        //     }
 
-            let x = pos.0.x;
-            let y = pos.0.y;
-            let z = pos.0.z;
-            self.instance_buffer
-                .update_slice(&gl, id.0.unwrap(), &[x, y, z]);
-        }
+        //     let x = pos.0.x;
+        //     let y = pos.0.y;
+        //     let z = pos.0.z;
+        //     self.instance_buffer
+        //         .update_slice(&gl, id.0.unwrap(), &[x, y, z]);
+        // }
 
         let seconds = crate::units::Seconds::<f32>::from(start.0.elapsed());
 
@@ -165,6 +138,7 @@ impl Renderer {
         #[allow(dead_code)]
         let ScreenSize((w, h)) = *screen_size;
 
+        
         // let trans = Mat4::translation_3d(Vec3::new(1., 1., 1.));
         // #[rustfmt::skip]
         // let trans = Mat4::new(1.0, 0.0, 0.0, 0.0,
@@ -181,13 +155,11 @@ impl Renderer {
             gl.viewport(0, 0, w as _, h as _);
 
             self.program.use_program(&gl);
-            // program.set_uniform(&gl, "ourColor", Vec4::new(0.0, green, 0.0, 1.0));
             self.program.set_uniform(&gl, "transform", m);
             self.texture.bind(&gl);
             self.vertex_array.bind(&gl);
-            // gl.draw_arrays(glow::TRIANGLES, 0, 6);
-            gl.draw_elements_instanced(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0, 4);
-
+            gl.draw_arrays(glow::TRIANGLES, 0, 6);
+            
             // gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
             gl.bind_vertex_array(None);
         }
