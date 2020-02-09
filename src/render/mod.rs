@@ -64,23 +64,24 @@ impl Renderer {
             load_bytes(include_bytes!("../../assets/c.png")),
         ];
         let texture = Texture::from_images(&gl, &images)?;
-        
+
         #[rustfmt::skip]
-        fn quad() -> [f32; 24] {
+        fn quad(x: f32, y: f32, size: f32) -> [f32; 24] {
+            let s = size;
             [
-                0.5,  0.5,   1.0, 1.0,
-                0.5, -0.5,   1.0, 0.0,
-               -0.5,  0.5,   0.0, 1.0,
-                
-                0.5, -0.5,   1.0, 0.0,
-               -0.5, -0.5,   0.0, 0.0,
-               -0.5,  0.5,   0.0, 1.0
+                0.5 + x + s,  0.5 + y + s,   1.0, 1.0,
+                0.5 + x + s, -0.5 + y    ,   1.0, 0.0,
+               -0.5 + x    ,  0.5 + y + s,   0.0, 1.0,
+                0.5 + x + s, -0.5 + y    ,   1.0, 0.0,
+               -0.5 + x    , -0.5 + y    ,   0.0, 0.0,
+               -0.5 + x    ,  0.5 + y + s,   0.0, 1.0
             ]
         }
-        
+
         let mut mesh: Vec<f32> = vec![];
-        mesh.extend(quad().iter());
-        
+        mesh.extend(quad(1.0, 2.0, 0.0).iter());
+        mesh.extend(quad(1.0, 0.0, 1.0).iter());
+
         let vertex_buffer_layout = Pipeline::new(
             Buffer::immutable(&gl, glow::ARRAY_BUFFER, &mesh)?,
             vec![
@@ -138,7 +139,6 @@ impl Renderer {
         #[allow(dead_code)]
         let ScreenSize((w, h)) = *screen_size;
 
-        
         // let trans = Mat4::translation_3d(Vec3::new(1., 1., 1.));
         // #[rustfmt::skip]
         // let trans = Mat4::new(1.0, 0.0, 0.0, 0.0,
@@ -158,8 +158,8 @@ impl Renderer {
             self.program.set_uniform(&gl, "transform", m);
             self.texture.bind(&gl);
             self.vertex_array.bind(&gl);
-            gl.draw_arrays(glow::TRIANGLES, 0, 6);
-            
+            gl.draw_arrays(glow::TRIANGLES, 0, 6 * 2);
+
             // gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
             gl.bind_vertex_array(None);
         }
