@@ -3,15 +3,16 @@ in vec2 vert_pos;
 in vec2 text_pos;
 in vec3 tile_pos;
 in float tile_size;
+in int text_idx;
 
 out vec2 f_text_pos;
-flat out int id;
+flat out int idx;
 
 uniform mat4 transform;
 
 void main() {
   f_text_pos = text_pos;
-  id = gl_InstanceID;
+  idx = text_idx;
   
   vec4 pos = vec4(vert_pos, 1.0, 1.0);
   

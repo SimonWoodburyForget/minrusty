@@ -3,12 +3,12 @@ precision mediump float;
 precision mediump sampler2DArray;
 
 in vec2 f_text_pos;
-flat in int id;
+flat in int idx;
 
 out vec4 color;
 
 uniform sampler2DArray tex;
 
 void main() {
-  color = texture(tex, vec3(f_text_pos, 1));
+  color = texture(tex, vec3(f_text_pos, idx));
 }

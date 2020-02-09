@@ -5,18 +5,20 @@ use std::iter;
 use std::mem;
 
 #[derive(Clone, Copy)]
-pub struct VertexAttribute {
+pub struct VertexAttribute<T> {
     location: u32,
     pub size: i32,
     divisor: Option<u32>,
+    phantom: std::marker::PhantomData<T>,
 }
 
-impl VertexAttribute {
+impl<T> VertexAttribute<T> {
     pub fn new(location: u32, size: i32) -> Self {
         Self {
             location,
             size,
             divisor: None,
+            phantom: std::marker::PhantomData,
         }
     }
 
@@ -35,7 +37,7 @@ impl VertexAttribute {
                 data_type,
                 false,
                 stride_size,
-                offset * mem::size_of::<f32>() as i32,
+                offset * mem::size_of::<T>() as i32,
             );
             gl.vertex_attrib_divisor(self.location, self.divisor.unwrap_or(0));
             gl.enable_vertex_attrib_array(self.location);
@@ -51,19 +53,11 @@ pub struct VertexArray {
 impl VertexArray {
     /// Initializes the vertex array object and it's vertex attribute pointers. Uses `vertex_bindings`
     /// to setup `VertexAttribute` in relation to some `Buffer`.
-    pub fn new(
-        gl: &Context,
-        vertex_buffers_layout: &[&Pipeline],
-        // element_buffer: &Buffer,
-    ) -> Result<Self, RenderError> {
+    pub fn new<F: Fn(&Context)>(gl: &Context, f: F) -> Result<Self, RenderError> {
         let vao = Some(unsafe { gl.create_vertex_array()? });
         unsafe { gl.bind_vertex_array(vao) };
 
-        // element_buffer.bind(&gl);
-
-        for layout in vertex_buffers_layout.iter() {
-            layout.setup(&gl);
-        }
+        f(&gl);
 
         unsafe {
             gl.bind_buffer(glow::ARRAY_BUFFER, None);

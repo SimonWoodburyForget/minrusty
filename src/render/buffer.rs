@@ -3,14 +3,15 @@ use super::*;
 use glow::*;
 
 #[derive(Clone, Copy, Debug, Default)]
-pub struct Buffer {
+pub struct Buffer<T> {
     buffer_id: Option<BufferId>,
     buffer_type: u32,
     size: usize,
+    phantom: std::marker::PhantomData<T>,
 }
 
-impl Buffer {
-    pub fn immutable<T>(gl: &Context, buffer_type: u32, data: &[T]) -> Result<Self, RenderError> {
+impl<T> Buffer<T> {
+    pub fn immutable(gl: &Context, buffer_type: u32, data: &[T]) -> Result<Self, RenderError> {
         // SAFETY: questionable, more testing needed.
 
         let size = data.len();
@@ -30,6 +31,7 @@ impl Buffer {
             buffer_id,
             buffer_type,
             size,
+            phantom: std::marker::PhantomData,
         })
     }
 
@@ -37,7 +39,7 @@ impl Buffer {
         unimplemented!();
     }
 
-    pub fn update<T>(&self, gl: &Context, data: &[T]) {
+    pub fn update(&self, gl: &Context, data: &[T]) {
         debug_assert!(data.len() <= self.size);
 
         let (head, body, tail) = unsafe { data.align_to::<u8>() };

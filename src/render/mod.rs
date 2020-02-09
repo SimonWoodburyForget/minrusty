@@ -43,7 +43,7 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn new(gl: Context) -> Result<Self, RenderError> {
-        let (vert_pos, text_pos, tile_pos, tile_size) = (0, 1, 2, 3);
+        let (vert_pos, text_pos, tile_pos, tile_size, text_idx) = (0, 1, 2, 3, 4);
 
         let program = Program::new(
             &gl,
@@ -54,6 +54,7 @@ impl Renderer {
                 (text_pos, "text_pos"),
                 (tile_pos, "tile_pos"),
                 (tile_size, "tile_size"),
+                (text_idx, "text_idx"),
             ],
         )?;
 
@@ -65,36 +66,50 @@ impl Renderer {
         ];
         let texture = Texture::from_images(&gl, &images)?;
 
-        #[rustfmt::skip]
-        fn quad(x: f32, y: f32, size: f32) -> [f32; 24] {
-            let s = size;
-            [
-                0.5 + x + s,  0.5 + y + s,   1.0, 1.0,
-                0.5 + x + s, -0.5 + y    ,   1.0, 0.0,
-               -0.5 + x    ,  0.5 + y + s,   0.0, 1.0,
-                0.5 + x + s, -0.5 + y    ,   1.0, 0.0,
-               -0.5 + x    , -0.5 + y    ,   0.0, 0.0,
-               -0.5 + x    ,  0.5 + y + s,   0.0, 1.0
-            ]
-        }
+        let vertex_buffer_layout = {
+            #[rustfmt::skip]
+            fn quad(x: f32, y: f32, size: f32) -> [f32; 24] {
+                let s = size;
+                [
+                    0.5 + x + s,  0.5 + y + s,   1.0, 1.0,
+                    0.5 + x + s, -0.5 + y    ,   1.0, 0.0,
+                   -0.5 + x    ,  0.5 + y + s,   0.0, 1.0,
+                    0.5 + x + s, -0.5 + y    ,   1.0, 0.0,
+                   -0.5 + x    , -0.5 + y    ,   0.0, 0.0,
+                   -0.5 + x    ,  0.5 + y + s,   0.0, 1.0
+                ]
+            }
 
-        let mut mesh: Vec<f32> = vec![];
-        mesh.extend(quad(1.0, 2.0, 0.0).iter());
-        mesh.extend(quad(1.0, 0.0, 1.0).iter());
+            let mut mesh: Vec<f32> = vec![];
+            mesh.extend(quad(1.0, 2.0, 0.0).iter());
+            mesh.extend(quad(1.0, 0.0, 1.0).iter());
 
-        let vertex_buffer_layout = Pipeline::new(
-            Buffer::immutable(&gl, glow::ARRAY_BUFFER, &mesh)?,
-            vec![
-                VertexAttribute::new(vert_pos, 2),
-                VertexAttribute::new(text_pos, 2),
-            ],
-        );
+            Pipeline::new(
+                Buffer::immutable(&gl, glow::ARRAY_BUFFER, &mesh)?,
+                vec![
+                    VertexAttribute::new(vert_pos, 2),
+                    VertexAttribute::new(text_pos, 2),
+                ],
+            )
+        };
 
-        let vertex_array = {
-            let bindings = &[&vertex_buffer_layout];
+        let texture_array_indices = {
+            #[rustfmt::skip]
+            let indices: Vec<i32> = vec![
+                3, 3, 3, 3, 3, 3,
+                2, 2, 2, 2, 2, 2,
+            ];
 
-            VertexArray::new(&gl, bindings)
-        }?;
+            Pipeline::new(
+                Buffer::immutable(&gl, glow::ARRAY_BUFFER, &indices)?,
+                vec![VertexAttribute::new(text_idx, 1)],
+            )
+        };
+
+        let vertex_array = VertexArray::new(&gl, |gl| {
+            vertex_buffer_layout.setup(&gl);
+            texture_array_indices.setup(&gl);
+        })?;
 
         Ok(Self {
             vertex_array,

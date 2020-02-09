@@ -4,14 +4,14 @@ use glow::*;
 use std::iter;
 use std::mem;
 
-pub struct Pipeline {
-    buffer: Buffer,
-    vertex_attributes: Vec<VertexAttribute>,
+pub struct Pipeline<T> {
+    buffer: Buffer<T>,
+    vertex_attributes: Vec<VertexAttribute<T>>,
     stride_size: usize,
 }
 
-impl Pipeline {
-    pub fn new(buffer: Buffer, vertex_attributes: Vec<VertexAttribute>) -> Self {
+impl<T> Pipeline<T> {
+    pub fn new(buffer: Buffer<T>, vertex_attributes: Vec<VertexAttribute<T>>) -> Self {
         let stride_count = vertex_attributes
             .iter()
             .map(|attr| attr.size as usize)
