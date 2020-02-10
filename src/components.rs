@@ -23,6 +23,10 @@ pub struct Velocity(pub Vec2<f32>);
 #[derive(Component, Clone, Debug)]
 pub struct Position(pub Vec3<f32>);
 
+/// Position in tile buffers.
+#[derive(Component, Clone, Debug)]
+pub struct Coordinate(pub Vec2<usize>);
+
 /// Size of a tile.
 #[derive(Component, Clone, Debug)]
 pub struct Size(pub f32);
@@ -37,3 +41,6 @@ pub struct Identity(pub String);
 /// Identity of entity for rendering.
 #[derive(Component, Clone, Copy, Debug)]
 pub struct RenderId(pub Option<usize>);
+
+#[derive(Component, Clone, Copy, Debug)]
+pub struct TextureIndex(pub u32);

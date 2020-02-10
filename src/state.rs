@@ -2,7 +2,6 @@ use crate::components::*;
 use crate::input::*;
 use crate::physics::*;
 use crate::player::*;
-use crate::units::*;
 
 use instant;
 use specs::prelude::*;
@@ -38,6 +37,8 @@ impl GameState {
         world.register::<Identity>();
         world.register::<Tile>();
         world.register::<RenderId>();
+        world.register::<Coordinate>();
+        world.register::<TextureIndex>();
 
         world.insert(GameStart::default());
         world.insert(DeltaTime::default());
@@ -56,14 +57,11 @@ impl GameState {
         }
     }
 
-    pub fn create_block<'a, T>(&mut self, x: f32, y: f32, name: T)
-    where
-        T: Into<Cow<'a, str>>,
-    {
+    pub fn create_block(&mut self, x: usize, y: usize, texture_id: u32) {
         self.ecs
             .create_entity()
-            .with(Identity(name.into().to_string()))
-            .with(Position(Vec3::new(x, y, -1.0)))
+            .with(TextureIndex(texture_id))
+            .with(Coordinate(Vec2::new(x, y)))
             .with(Tile)
             .with(RenderId(None))
             .build();

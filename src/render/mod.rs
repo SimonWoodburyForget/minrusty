@@ -6,7 +6,6 @@
 mod buffer;
 mod error;
 mod img;
-mod pipeline;
 mod program;
 mod texture;
 mod types;
@@ -16,7 +15,6 @@ mod vertex_array;
 pub use buffer::*;
 pub use error::*;
 pub use img::*;
-pub use pipeline::*;
 pub use program::*;
 pub use texture::*;
 pub use types::*;
@@ -41,6 +39,8 @@ pub struct Renderer {
     program: Program,
 
     grid_size: Vec2<usize>,
+    grid_textures: Buffer<i32>,
+    vert_per_quad: usize,
 }
 
 impl Renderer {
@@ -69,9 +69,10 @@ impl Renderer {
         ];
         let texture = Texture::from_images(&gl, &images)?;
 
-        let vertex_buffer_layout = {
+        const VERT_PER_QUAD: usize = 6;
+        let vertex_buffer = {
             #[rustfmt::skip]
-            fn quad(x: f32, y: f32, size: f32) -> [f32; 24] {
+            fn quad(x: f32, y: f32, size: f32) -> [f32; VERT_PER_QUAD * 4] {
                 let s = size;
                 [
                     0.5 + x + s,  0.5 + y + s,   1.0, 1.0,
@@ -92,27 +93,31 @@ impl Renderer {
                 mesh.extend(quad(x as _, y as _, 0.0).iter());
             }
 
-            Pipeline::new(
-                Buffer::immutable(&gl, glow::ARRAY_BUFFER, &mesh)?,
+            Buffer::immutable(
+                &gl,
+                glow::ARRAY_BUFFER,
+                &mesh,
                 vec![
                     VertexAttribute::new(vert_pos, 2),
                     VertexAttribute::new(text_pos, 2),
                 ],
-            )
+            )?
         };
 
         let texture_array_indices = {
             #[rustfmt::skip]
             let indices: Vec<i32> = vec![0; grid_height * grid_width * 6 * 4];
 
-            Pipeline::new(
-                Buffer::immutable(&gl, glow::ARRAY_BUFFER, &indices)?,
+            Buffer::immutable(
+                &gl,
+                glow::ARRAY_BUFFER,
+                &indices,
                 vec![VertexAttribute::new(text_idx, 1)],
-            )
+            )?
         };
 
         let vertex_array = VertexArray::new(&gl, |gl| {
-            vertex_buffer_layout.setup(&gl);
+            vertex_buffer.setup(&gl);
             texture_array_indices.setup(&gl);
         })?;
 
@@ -124,35 +129,35 @@ impl Renderer {
             gl,
 
             grid_size: Vec2::new(grid_height, grid_width),
+            grid_textures: texture_array_indices,
+            vert_per_quad: VERT_PER_QUAD,
         })
     }
 
     pub fn render<'a>(
         &mut self,
-        (_ent, start, screen_size, _positions, mut _id): (
+        (entities, start, screen_size, _positions, coordinates, textures, mut _id): (
             Entities<'a>,
             Read<'a, GameStart>,
             Read<'a, ScreenSize>,
             ReadStorage<'a, Position>,
+            ReadStorage<'a, Coordinate>,
+            ReadStorage<'a, TextureIndex>,
             WriteStorage<'a, RenderId>,
         ),
     ) -> Result<(), RenderError> {
         let Self { gl, .. } = self;
 
-        // let mut pos_vec = Vec::new();
-        // for (_, pos, id) in (&*ent, &positions, &mut id).join() {
-        //     pos_vec.push(pos.0);
+        for (_, coord, text) in (&*entities, &coordinates, &textures).join() {
+            let t = text.0 as i32;
+            let (x, y) = (coord.0.x, coord.0.y);
 
-        //     if let RenderId(None) = id {
-        //         *id = RenderId(Some(self.instance_buffer.next_free()?));
-        //     }
-
-        //     let x = pos.0.x;
-        //     let y = pos.0.y;
-        //     let z = pos.0.z;
-        //     self.instance_buffer
-        //         .update_slice(&gl, id.0.unwrap(), &[x, y, z]);
-        // }
+            // TODO: refactor into a `grid model` of some kind.
+            let index =
+                (x * self.grid_size.x * self.vert_per_quad * 4) + y * self.vert_per_quad * 4;
+            self.grid_textures
+                .update(&gl, index as _, &[t, t, t, t, t, t]);
+        }
 
         let seconds = crate::units::Seconds::<f32>::from(start.0.elapsed());
 
@@ -181,7 +186,11 @@ impl Renderer {
             self.program.set_uniform(&gl, "transform", m);
             self.texture.bind(&gl);
             self.vertex_array.bind(&gl);
-            gl.draw_arrays(glow::TRIANGLES, 0, (6 * self.grid_size.product()) as _);
+            gl.draw_arrays(
+                glow::TRIANGLES,
+                0,
+                (self.vert_per_quad * self.grid_size.product()) as _,
+            );
 
             // gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
             gl.bind_vertex_array(None);

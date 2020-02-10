@@ -41,8 +41,10 @@ pub struct ScreenSize(pub (u32, u32));
 pub fn main() {
     let mut game = state::GameState::new();
     game.create_player();
-    game.create_block(0., 1., "wall");
-    game.create_block(1., 1., "core");
+    game.create_block(0, 1, 0);
+    game.create_block(1, 1, 1);
+    game.create_block(1, 0, 2);
+    game.create_block(0, 0, 3);
 
     let event_loop = winit::event_loop::EventLoop::new();
     let (window, mut renderer) = Window::new(&event_loop).unwrap();
