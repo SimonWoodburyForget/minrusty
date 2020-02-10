@@ -1,7 +1,6 @@
 use super::*;
 
 use glow::*;
-use std::iter;
 use std::mem;
 
 pub struct Pipeline<T> {
@@ -16,7 +15,7 @@ impl<T> Pipeline<T> {
             .iter()
             .map(|attr| attr.size as usize)
             .sum::<usize>();
-        let stride_size = stride_count * mem::size_of::<f32>();
+        let stride_size = stride_count * mem::size_of::<T>();
 
         Self {
             buffer,

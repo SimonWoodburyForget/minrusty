@@ -39,10 +39,13 @@ pub struct Renderer {
     texture: Texture,
     vertex_array: VertexArray,
     program: Program,
+
+    grid_size: Vec2<usize>,
 }
 
 impl Renderer {
     pub fn new(gl: Context) -> Result<Self, RenderError> {
+        let (grid_height, grid_width) = (2, 2);
         let (vert_pos, text_pos, tile_pos, tile_size, text_idx) = (0, 1, 2, 3, 4);
 
         let program = Program::new(
@@ -80,9 +83,14 @@ impl Renderer {
                 ]
             }
 
+            let grid = (0..grid_height)
+                .map(|x| (0..grid_width).map(move |y| (x, y)))
+                .flatten();
+
             let mut mesh: Vec<f32> = vec![];
-            mesh.extend(quad(1.0, 2.0, 0.0).iter());
-            mesh.extend(quad(1.0, 0.0, 1.0).iter());
+            for (x, y) in grid {
+                mesh.extend(quad(x as _, y as _, 0.0).iter());
+            }
 
             Pipeline::new(
                 Buffer::immutable(&gl, glow::ARRAY_BUFFER, &mesh)?,
@@ -95,10 +103,7 @@ impl Renderer {
 
         let texture_array_indices = {
             #[rustfmt::skip]
-            let indices: Vec<i32> = vec![
-                3, 3, 3, 3, 3, 3,
-                2, 2, 2, 2, 2, 2,
-            ];
+            let indices: Vec<i32> = vec![0; grid_height * grid_width * 6 * 4];
 
             Pipeline::new(
                 Buffer::immutable(&gl, glow::ARRAY_BUFFER, &indices)?,
@@ -117,6 +122,8 @@ impl Renderer {
             texture,
 
             gl,
+
+            grid_size: Vec2::new(grid_height, grid_width),
         })
     }
 
@@ -168,12 +175,13 @@ impl Renderer {
         unsafe {
             gl.clear(glow::COLOR_BUFFER_BIT);
             gl.viewport(0, 0, w as _, h as _);
+            gl.scissor(0, 0, w as _, h as _);
 
             self.program.use_program(&gl);
             self.program.set_uniform(&gl, "transform", m);
             self.texture.bind(&gl);
             self.vertex_array.bind(&gl);
-            gl.draw_arrays(glow::TRIANGLES, 0, 6 * 2);
+            gl.draw_arrays(glow::TRIANGLES, 0, (6 * self.grid_size.product()) as _);
 
             // gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
             gl.bind_vertex_array(None);
