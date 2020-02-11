@@ -40,16 +40,18 @@ pub fn log(x: &str) {
 pub struct ScreenSize(pub (u32, u32));
 
 pub fn main() {
-    let mut game = state::GameState::new();
+    let event_loop = winit::event_loop::EventLoop::new();
+    let (window, renderer) = Window::new(&event_loop).unwrap();
+
+    let mut game = state::GameState::new(renderer);
 
     game.create_player();
     game.create_block(0, 1, "a");
     game.create_block(1, 1, "b");
     game.create_block(1, 0, "c");
     game.create_block(0, 0, "d");
+    game.create_block(1, 2, "d");
 
-    let event_loop = winit::event_loop::EventLoop::new();
-    let (window, mut renderer) = Window::new(&event_loop).unwrap();
     game.ecs.insert(ScreenSize(window.dimensions()));
 
     event_loop.run(move |event, _, control_flow| {
@@ -77,7 +79,6 @@ pub fn main() {
 
             Event::RedrawRequested(_) => {
                 game.update();
-                renderer.render(game.ecs.system_data()).unwrap();
                 window.on_event(window::Event::Draw);
             }
 

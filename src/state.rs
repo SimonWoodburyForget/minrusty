@@ -31,7 +31,7 @@ pub struct GameState {
 }
 
 impl GameState {
-    pub fn new() -> Self {
+    pub fn new(renderer: crate::render::Renderer) -> Self {
         let mut world = World::new();
 
         world.register::<Position>();
@@ -50,6 +50,7 @@ impl GameState {
             .with(InputSystem(None), "input-system", &[])
             .with(PlayerSystem, "player-system", &["input-system"])
             .with(PhysicSystem, "physic-system", &["player-system"])
+            .with_thread_local(renderer)
             .build();
         dispatcher.setup(&mut world);
 

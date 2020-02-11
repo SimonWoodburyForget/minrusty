@@ -23,7 +23,9 @@ fn load_bytes(bytes: &[u8], size: (u32, u32)) -> DynamicImage {
 /// accessed by the rendering systems to load textures into GPU memory.
 #[derive(Default)]
 pub struct Loader {
-    pub images: Vec<DynamicImage>,
+    /// A vector of ordered images, the way they're ordered in
+    /// the 2D Texture Array within OpenGL.
+    images: Vec<DynamicImage>,
     names: Vec<String>,
 }
 
@@ -43,6 +45,11 @@ impl Loader {
             .enumerate()
             .find(|(_, n)| &name == n)
             .map(|(e, _)| e)
+    }
+
+    /// Iterates over dynamic images, to supply the image data itself.
+    pub fn iter_images(&self) -> impl Iterator<Item = (usize, &DynamicImage)> {
+        self.images.iter().enumerate()
     }
 }
 

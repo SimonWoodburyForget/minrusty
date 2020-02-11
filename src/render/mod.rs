@@ -47,7 +47,7 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn new(gl: Context) -> Result<Self, RenderError> {
-        let (grid_height, grid_width) = (2, 2);
+        let (grid_height, grid_width) = (6, 6);
         let (vert_pos, text_pos, tile_pos, tile_size, text_idx) = (0, 1, 2, 3, 4);
 
         let program = Program::new(
@@ -133,30 +133,34 @@ impl Renderer {
             frame: 0,
         })
     }
+}
 
-    pub fn render<'a>(
+impl<'a> System<'a> for Renderer {
+    type SystemData = (
+        Entities<'a>,
+        Read<'a, GameStart>,
+        Read<'a, ScreenSize>,
+        Read<'a, Loader>,
+        ReadStorage<'a, Position>,
+        ReadStorage<'a, Coordinate>,
+        ReadStorage<'a, TextureIndex>,
+    );
+
+    fn setup(&mut self, world: &mut World) {
+        let loader = world.fetch::<Loader>();
+        for (e, image) in loader.iter_images() {
+            self.texture.update_image(&self.gl, e as u32, image);
+        }
+    }
+
+    fn run(
         &mut self,
-        (entities, start, screen_size, loader, _positions, coordinates, textures): (
-            Entities<'a>,
-            Read<'a, GameStart>,
-            Read<'a, ScreenSize>,
-            Read<'a, Loader>,
-            ReadStorage<'a, Position>,
-            ReadStorage<'a, Coordinate>,
-            ReadStorage<'a, TextureIndex>,
-        ),
-    ) -> Result<(), RenderError> {
+        (entities, start, screen_size, loader, _positions, coordinates, textures): Self::SystemData,
+    ) {
         let Self { gl, .. } = self;
 
-        // TODO: this should probably be in another setup method of some kind.
-        if self.frame == 0 {
-            for (e, image) in loader.images.iter().enumerate() {
-                self.texture.update_image(&gl, e as _, image);
-            }
-        }
-
         for (_, coord, text) in (&*entities, &coordinates, &textures).join() {
-            let t = text.0.expect("Image failed to load.") as _;
+            let t = text.0.unwrap() as _;
             let (x, y) = (coord.0.x, coord.0.y);
 
             // TODO: refactor into a `grid model` of some kind.
@@ -209,6 +213,5 @@ impl Renderer {
         }
 
         self.frame += 1;
-        Ok(())
     }
 }
