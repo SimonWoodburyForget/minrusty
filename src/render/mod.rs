@@ -41,6 +41,7 @@ pub struct Renderer {
     grid_size: Vec2<usize>,
     grid_textures: Buffer<i32>,
     vert_per_quad: usize,
+    vert_size: usize,
 }
 
 impl Renderer {
@@ -70,9 +71,10 @@ impl Renderer {
         let texture = Texture::from_images(&gl, &images)?;
 
         const VERT_PER_QUAD: usize = 6;
+        const VERT_SIZE: usize = 4;
         let vertex_buffer = {
             #[rustfmt::skip]
-            fn quad(x: f32, y: f32, size: f32) -> [f32; VERT_PER_QUAD * 4] {
+            fn quad(x: f32, y: f32, size: f32) -> [f32; VERT_PER_QUAD * VERT_SIZE] {
                 let s = size;
                 [
                     0.5 + x + s,  0.5 + y + s,   1.0, 1.0,
@@ -106,7 +108,7 @@ impl Renderer {
 
         let texture_array_indices = {
             #[rustfmt::skip]
-            let indices: Vec<i32> = vec![0; grid_height * grid_width * 6 * 4];
+            let indices: Vec<i32> = vec![0; grid_height * grid_width * VERT_PER_QUAD * VERT_SIZE];
 
             Buffer::immutable(
                 &gl,
@@ -131,6 +133,7 @@ impl Renderer {
             grid_size: Vec2::new(grid_height, grid_width),
             grid_textures: texture_array_indices,
             vert_per_quad: VERT_PER_QUAD,
+            vert_size: VERT_SIZE,
         })
     }
 
@@ -153,8 +156,8 @@ impl Renderer {
             let (x, y) = (coord.0.x, coord.0.y);
 
             // TODO: refactor into a `grid model` of some kind.
-            let index =
-                (x * self.grid_size.x * self.vert_per_quad * 4) + y * self.vert_per_quad * 4;
+            let index = (x * self.grid_size.x * self.vert_per_quad * self.vert_size)
+                + y * self.vert_per_quad * self.vert_size;
             self.grid_textures
                 .update(&gl, index as _, &[t, t, t, t, t, t]);
         }
@@ -166,16 +169,21 @@ impl Renderer {
         #[allow(dead_code)]
         let ScreenSize((w, h)) = *screen_size;
 
-        // let trans = Mat4::translation_3d(Vec3::new(1., 1., 1.));
-        // #[rustfmt::skip]
-        // let trans = Mat4::new(1.0, 0.0, 0.0, 0.0,
-        //                       0.0, 1.0, 0.0, 0.0,
-        //                       0.0, 0.0, 1.0, 0.0,
-        //                       0.0, 0.0, 0.0, 1.0);
+        let scale = Mat4::scaling_3d(Vec3::new(300., 300., 1.0));
 
-        let scale = Mat4::scaling_3d(Vec3::new(0.3, 0.3, 1.0));
+        #[rustfmt::skip]
+        let frustum = {
+            let (w, h) = (w as f32, h as f32);
+            FrustumPlanes::<f32> {
+                left: -w, right: w,
+                bottom: -h, top: h,
+                near: -2., far: 2.,
+            }
+        };
 
-        let m = scale;
+        let ortho = Mat4::orthographic_rh_no(frustum);
+
+        let m = ortho * scale;
 
         unsafe {
             gl.clear(glow::COLOR_BUFFER_BIT);
