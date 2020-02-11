@@ -1,5 +1,6 @@
 use crate::components::*;
 use crate::input::*;
+use crate::loader::*;
 use crate::physics::*;
 use crate::player::*;
 
@@ -34,7 +35,7 @@ impl GameState {
         let mut world = World::new();
 
         world.register::<Position>();
-        world.register::<Identity>();
+        world.register::<Name>();
         world.register::<Tile>();
         world.register::<RenderId>();
         world.register::<Coordinate>();
@@ -42,8 +43,10 @@ impl GameState {
 
         world.insert(GameStart::default());
         world.insert(DeltaTime::default());
+        // world.insert(AssetSystem::default());
 
         let mut dispatcher = DispatcherBuilder::new()
+            .with(AssetSystem::default(), "asset-system", &[])
             .with(InputSystem(None), "input-system", &[])
             .with(PlayerSystem, "player-system", &["input-system"])
             .with(PhysicSystem, "physic-system", &["player-system"])
@@ -57,13 +60,14 @@ impl GameState {
         }
     }
 
-    pub fn create_block(&mut self, x: usize, y: usize, texture_id: u32) {
+    pub fn create_block(&mut self, x: usize, y: usize, name: &str) {
         self.ecs
             .create_entity()
-            .with(TextureIndex(texture_id))
+            .with(Name(name.into()))
             .with(Coordinate(Vec2::new(x, y)))
             .with(Tile)
             .with(RenderId(None))
+            .with(TextureIndex(None))
             .build();
     }
 

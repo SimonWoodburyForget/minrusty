@@ -22,7 +22,42 @@ impl Texture {
 
     /// Creates a texture array for n-images of a specific size.
     pub fn new(gl: &Context, width: u32, height: u32, depth: u32) -> Result<Self, RenderError> {
-        let texture_id = Some(unsafe { gl.create_texture()? });
+        let texture_id;
+        unsafe {
+            texture_id = Some(gl.create_texture()?);
+
+            gl.active_texture(glow::TEXTURE0);
+            gl.bind_texture(glow::TEXTURE_2D_ARRAY, texture_id);
+
+            gl.tex_image_3d(
+                glow::TEXTURE_2D_ARRAY,
+                0,
+                glow::RGBA as i32,
+                width as i32,
+                height as i32,
+                depth as i32 + 1,
+                0,
+                glow::RGBA,
+                glow::UNSIGNED_BYTE,
+                None,
+            );
+
+            gl.generate_mipmap(glow::TEXTURE_2D_ARRAY);
+
+            gl.tex_parameter_i32(
+                glow::TEXTURE_2D_ARRAY,
+                glow::TEXTURE_MIN_FILTER,
+                glow::NEAREST_MIPMAP_LINEAR as i32,
+            );
+            gl.tex_parameter_i32(
+                glow::TEXTURE_2D_ARRAY,
+                glow::TEXTURE_MAG_FILTER,
+                glow::NEAREST as i32,
+            );
+            gl.tex_parameter_i32(glow::TEXTURE_2D_ARRAY, glow::TEXTURE_MAX_LEVEL, 4);
+            gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_S, glow::REPEAT as i32);
+            gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_T, glow::REPEAT as i32);
+        };
 
         Ok(Self {
             texture_id,
@@ -31,6 +66,39 @@ impl Texture {
             depth,
             slot: 0,
         })
+    }
+
+    /// Loads an image into the texture array.
+    ///
+    /// # Panic
+    ///
+    /// - image must be exactly the same dimensions as the texture array,
+    /// - image depth must not exceed texture array depth,
+    pub fn update_image(&self, gl: &Context, depth: u32, image: &DynamicImage) {
+        let rgb = image.to_rgba();
+        let (width, height) = rgb.dimensions();
+
+        assert!(self.width == width);
+        assert!(self.height == height);
+        assert!(self.depth > depth);
+
+        unsafe {
+            self.bind(&gl);
+
+            gl.tex_sub_image_3d_u8_slice(
+                glow::TEXTURE_2D_ARRAY,
+                0,
+                0,
+                0,
+                depth as i32,
+                self.width as i32,
+                self.height as i32,
+                depth as i32 + 1,
+                glow::RGBA,
+                glow::UNSIGNED_BYTE,
+                Some(&rgb.into_raw()),
+            );
+        }
     }
 
     /// Creates a texture array from dynamic image.

@@ -5,7 +5,6 @@
 
 mod buffer;
 mod error;
-mod img;
 mod program;
 mod texture;
 mod types;
@@ -14,7 +13,6 @@ mod vertex_array;
 
 pub use buffer::*;
 pub use error::*;
-pub use img::*;
 pub use program::*;
 pub use texture::*;
 pub use types::*;
@@ -24,6 +22,7 @@ pub use vertex_array::*;
 use glow::*;
 
 use crate::components::*;
+use crate::loader::*;
 use crate::state::GameStart;
 use crate::ScreenSize;
 use specs::prelude::*;
@@ -42,6 +41,8 @@ pub struct Renderer {
     grid_textures: Buffer<i32>,
     vert_per_quad: usize,
     vert_size: usize,
+
+    frame: u64,
 }
 
 impl Renderer {
@@ -62,13 +63,7 @@ impl Renderer {
             ],
         )?;
 
-        let images = [
-            load_bytes(include_bytes!("../../assets/a.png")),
-            load_bytes(include_bytes!("../../assets/b.png")),
-            load_bytes(include_bytes!("../../assets/d.png")),
-            load_bytes(include_bytes!("../../assets/c.png")),
-        ];
-        let texture = Texture::from_images(&gl, &images)?;
+        let texture = Texture::new(&gl, 32, 32, 6)?;
 
         const VERT_PER_QUAD: usize = 6;
         const VERT_SIZE: usize = 4;
@@ -134,25 +129,34 @@ impl Renderer {
             grid_textures: texture_array_indices,
             vert_per_quad: VERT_PER_QUAD,
             vert_size: VERT_SIZE,
+
+            frame: 0,
         })
     }
 
     pub fn render<'a>(
         &mut self,
-        (entities, start, screen_size, _positions, coordinates, textures, mut _id): (
+        (entities, start, screen_size, loader, _positions, coordinates, textures): (
             Entities<'a>,
             Read<'a, GameStart>,
             Read<'a, ScreenSize>,
+            Read<'a, Loader>,
             ReadStorage<'a, Position>,
             ReadStorage<'a, Coordinate>,
             ReadStorage<'a, TextureIndex>,
-            WriteStorage<'a, RenderId>,
         ),
     ) -> Result<(), RenderError> {
         let Self { gl, .. } = self;
 
+        // TODO: this should probably be in another setup method of some kind.
+        if self.frame == 0 {
+            for (e, image) in loader.images.iter().enumerate() {
+                self.texture.update_image(&gl, e as _, image);
+            }
+        }
+
         for (_, coord, text) in (&*entities, &coordinates, &textures).join() {
-            let t = text.0 as i32;
+            let t = text.0.expect("Image failed to load.") as _;
             let (x, y) = (coord.0.x, coord.0.y);
 
             // TODO: refactor into a `grid model` of some kind.
@@ -204,6 +208,7 @@ impl Renderer {
             gl.bind_vertex_array(None);
         }
 
+        self.frame += 1;
         Ok(())
     }
 }

@@ -35,12 +35,16 @@ pub struct Size(pub f32);
 pub struct Color(pub Vec4<f32>);
 
 /// An internal name used to bundle assets together.
-#[derive(Component, Clone, Debug)]
-pub struct Identity(pub String);
+pub struct Name(pub String);
+impl Component for Name {
+    /// Storage is flag, so that when a name is changed or inserted, other systems
+    /// are capable of applying the change.
+    type Storage = FlaggedStorage<Self, VecStorage<Self>>;
+}
 
 /// Identity of entity for rendering.
 #[derive(Component, Clone, Copy, Debug)]
 pub struct RenderId(pub Option<usize>);
 
 #[derive(Component, Clone, Copy, Debug)]
-pub struct TextureIndex(pub u32);
+pub struct TextureIndex(pub Option<usize>);
