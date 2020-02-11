@@ -102,6 +102,7 @@ impl Texture {
     }
 
     /// Creates a texture array from dynamic image.
+    #[allow(dead_code)]
     pub fn from_images(gl: &Context, images: &[DynamicImage]) -> Result<Self, RenderError> {
         let size = images
             .iter()

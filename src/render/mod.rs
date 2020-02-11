@@ -140,7 +140,6 @@ impl<'a> System<'a> for Renderer {
         Entities<'a>,
         Read<'a, GameStart>,
         Read<'a, ScreenSize>,
-        Read<'a, Loader>,
         ReadStorage<'a, Position>,
         ReadStorage<'a, Coordinate>,
         ReadStorage<'a, TextureIndex>,
@@ -155,7 +154,7 @@ impl<'a> System<'a> for Renderer {
 
     fn run(
         &mut self,
-        (entities, start, screen_size, loader, _positions, coordinates, textures): Self::SystemData,
+        (entities, start, screen_size, _positions, coordinates, textures): Self::SystemData,
     ) {
         let Self { gl, .. } = self;
 

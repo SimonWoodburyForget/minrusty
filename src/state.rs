@@ -6,7 +6,6 @@ use crate::player::*;
 
 use instant;
 use specs::prelude::*;
-use std::borrow::Cow;
 use vek::*;
 
 /// Duration between current and last instants.

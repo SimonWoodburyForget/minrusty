@@ -1,7 +1,6 @@
 use super::*;
 
 use glow::*;
-use std::iter;
 use std::mem;
 
 #[derive(Clone, Copy)]
@@ -22,6 +21,7 @@ impl<T> VertexAttribute<T> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn with_div(self, divisor: u32) -> Self {
         Self {
             divisor: Some(divisor),
