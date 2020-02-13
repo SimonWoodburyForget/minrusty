@@ -8,7 +8,7 @@ pub struct Layout<T> {
     stride_size: usize,
 }
 
-impl<T> Layout<T> {
+impl<T: Pod> Layout<T> {
     pub fn new(vertex_attributes: Vec<VertexAttribute<T>>) -> Self {
         let stride_count = vertex_attributes
             .iter()
@@ -42,7 +42,7 @@ pub struct Buffer<T> {
     layout: Layout<T>,
 }
 
-impl<T> Buffer<T> {
+impl<T: Pod> Buffer<T> {
     pub fn immutable(
         gl: &Context,
         buffer_type: u32,
@@ -54,13 +54,15 @@ impl<T> Buffer<T> {
         let size = data.len();
         let buffer_id = Some(unsafe { gl.create_buffer()? });
 
-        let (head, body, tail) = unsafe { data.align_to::<u8>() };
-        assert!(head.is_empty());
-        assert!(tail.is_empty());
+        let data: &[u8] = super::cast_slice(data);
+        // let (head, data, tail) = unsafe { data.align_to::<u8>() };
+
+        // assert!(head.is_empty());
+        // assert!(tail.is_empty());
 
         unsafe {
             gl.bind_buffer(buffer_type, buffer_id);
-            gl.buffer_data_u8_slice(buffer_type, body, glow::STATIC_DRAW);
+            gl.buffer_data_u8_slice(buffer_type, data, glow::STATIC_DRAW);
             gl.bind_buffer(buffer_type, None);
         }
 
