@@ -165,32 +165,41 @@ impl<'a> System<'a> for Renderer {
             // TODO: refactor into a `grid model` of some kind.
             let index = (x * self.grid_size.x * self.vert_per_quad * self.vert_size)
                 + y * self.vert_per_quad * self.vert_size;
-            self.grid_textures
-                .update(&gl, index as _, &[t, t, t, t, t, t]);
+            self.grid_textures.update(&gl, index as _, &[t; 6]);
         }
 
         let seconds = crate::units::Seconds::<f32>::from(start.0.elapsed());
 
         let _scale = 0.3 * seconds.0.sin();
 
-        #[allow(dead_code)]
         let ScreenSize((w, h)) = *screen_size;
 
-        let scale = Mat4::scaling_3d(Vec3::new(300., 300., 1.0));
+        let scale: Mat4<f32> = Mat4::scaling_3d(Vec3::new(300., 300., 1.0));
 
         #[rustfmt::skip]
         let frustum = {
             let (w, h) = (w as f32, h as f32);
             FrustumPlanes::<f32> {
-                left: -w, right: w,
-                bottom: -h, top: h,
-                near: -2., far: 2.,
+                left: 0.0, right: w,
+                bottom: 0.0, top: h,
+                near: -10., far: 10.,
             }
         };
 
-        let ortho = Mat4::orthographic_rh_no(frustum);
+        let ortho = Mat4::frustum_rh_no(frustum);
 
-        let m = ortho * scale;
+        let x = -1.0 + 0.3 * seconds.0.sin();
+        let y = -1.0 + 0.3 * seconds.0.cos();
+
+        #[rustfmt::skip]
+        let movit = Mat4::new(
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            x, y, 0.0, 1.0,
+        );
+
+        let m = movit * ortho * scale;
 
         unsafe {
             gl.clear(glow::COLOR_BUFFER_BIT);

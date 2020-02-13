@@ -33,10 +33,7 @@ impl GameState {
     pub fn new(renderer: crate::render::Renderer) -> Self {
         let mut world = World::new();
 
-        world.register::<Position>();
         world.register::<Name>();
-        world.register::<Tile>();
-        world.register::<RenderId>();
         world.register::<Coordinate>();
         world.register::<TextureIndex>();
 
@@ -65,20 +62,7 @@ impl GameState {
             .create_entity()
             .with(Name(name.into()))
             .with(Coordinate(Vec2::new(x, y)))
-            .with(Tile)
-            .with(RenderId(None))
             .with(TextureIndex(None))
-            .build();
-    }
-
-    pub fn create_player(&mut self) {
-        self.ecs
-            .create_entity()
-            .with(Position(Vec3::new(0.0, 0.0, -0.5)))
-            .with(Velocity(Vec2::zero()))
-            .with(Force(Vec2::zero()))
-            .with(Control)
-            .with(RenderId(None))
             .build();
     }
 

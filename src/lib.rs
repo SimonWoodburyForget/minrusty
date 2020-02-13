@@ -45,7 +45,6 @@ pub fn main() {
 
     let mut game = state::GameState::new(renderer);
 
-    game.create_player();
     game.create_block(0, 1, "a");
     game.create_block(1, 1, "b");
     game.create_block(1, 0, "c");

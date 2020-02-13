@@ -23,7 +23,8 @@ pub struct Velocity(pub Vec2<f32>);
 #[derive(Component, Clone, Debug)]
 pub struct Position(pub Vec3<f32>);
 
-/// Position in tile buffers.
+/// Position in tile space. Tile are 1 by 1 in size, so this component
+/// can't represent half a tile.
 #[derive(Component, Clone, Debug)]
 pub struct Coordinate(pub Vec2<usize>);
 
@@ -48,3 +49,7 @@ pub struct RenderId(pub Option<usize>);
 
 #[derive(Component, Clone, Copy, Debug)]
 pub struct TextureIndex(pub Option<usize>);
+
+#[derive(Component, Default)]
+#[storage(NullStorage)]
+pub struct Conveyor;

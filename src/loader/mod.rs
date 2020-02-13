@@ -100,7 +100,6 @@ impl<'a> System<'a> for AssetSystem {
                     }
                     ComponentEvent::Inserted(id) => {
                         self.inserted.add(*id);
-                        println!("{}", id);
                     }
                     _ => {}
                 }
@@ -112,7 +111,6 @@ impl<'a> System<'a> for AssetSystem {
         for (_, name, _id, t_index) in
             (&entities, &names, &self.inserted, &mut texture_indicies).join()
         {
-            println!("{} -- {:?}", name.0, t_index.0);
             if let Some(index) = loader.find_name_index(&name.0) {
                 t_index.0 = Some(index as usize);
             }
