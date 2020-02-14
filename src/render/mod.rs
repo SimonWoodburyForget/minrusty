@@ -5,11 +5,11 @@
 
 mod buffer;
 mod error;
+mod memory;
 mod program;
 mod texture;
 mod types;
 mod uniform;
-mod vertex_array;
 
 pub use buffer::*;
 pub use error::*;
@@ -17,51 +17,71 @@ pub use program::*;
 pub use texture::*;
 pub use types::*;
 pub use uniform::*;
-pub use vertex_array::*;
 
 use crate::components::*;
 use crate::loader::*;
 use crate::state::GameStart;
 use crate::ScreenSize;
+use memory::Pod;
 
 use glow::*;
 use specs::prelude::*;
 use vek::*;
 
-pub trait Format {}
-
-/// A trait for plain-old-data types.
-///
-/// A POD type does not have invalid bit patterns and can be safely created from arbitrary bit pattern.
-/// The `Pod` trait is implemented for standard integer and floating point numbers as well as common
-/// arrays of them (for example `[f32; 2]`).
-pub unsafe trait Pod {}
-
-macro_rules! impl_pod {
-    ( ty = $($ty:ty)* ) => { $( unsafe impl Pod for $ty {} )* };
-    ( ar = $($tt:expr)* ) => { $( unsafe impl<T: Pod> Pod for [T; $tt] {} )* };
+pub struct VertexAttribute {
+    location: u32,
+    size: i32,
+    size_type: usize,
+    data_type: u32,
 }
 
-impl_pod! { ty = isize usize i8 u8 i16 u16 i32 u32 i64 u64 f32 f64 }
-impl_pod! {
-    ar = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16
-        17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32
+impl VertexAttribute {
+    fn new(location: u32, size: i32, size_type: usize, data_type: u32) -> Self {
+        Self {
+            location,
+            size,
+            size_type,
+            data_type,
+        }
+    }
 }
 
-unsafe impl<T: Pod> Pod for &[T] {}
+#[derive(Copy, Clone, Default)]
+#[repr(C)]
+pub struct Vertex {
+    /// Position of the vertex.
+    pos: [f32; 2],
 
-/// Cast a slice from one POD type to another.
-pub fn cast_slice<A: Pod, B: Pod>(slice: &[A]) -> &[B] {
-    use std::mem;
-    use std::slice;
+    /// Texture coordinates.
+    tex: [f32; 2],
 
-    let raw_len = mem::size_of::<A>().wrapping_mul(slice.len());
-    let len = raw_len / mem::size_of::<B>();
-    assert_eq!(raw_len, mem::size_of::<B>().wrapping_mul(len));
-    unsafe { slice::from_raw_parts(slice.as_ptr() as *const B, len) }
+    /// Texture array index.
+    idx: i32,
+}
+
+unsafe impl Pod for Vertex {}
+
+const VERT_POS: u32 = 0;
+const TEXT_POS: u32 = 1;
+const TEXT_IDX: u32 = 4;
+
+impl Vertex {
+    fn stride_size() -> usize {
+        std::mem::size_of::<f32>() * 4 + std::mem::size_of::<i32>()
+    }
+
+    fn vertex_attributes() -> [VertexAttribute; 3] {
+        [
+            VertexAttribute::new(VERT_POS, 2, std::mem::size_of::<f32>() as _, glow::FLOAT),
+            VertexAttribute::new(TEXT_POS, 2, std::mem::size_of::<f32>() as _, glow::FLOAT),
+            VertexAttribute::new(TEXT_IDX, 1, std::mem::size_of::<i32>() as _, glow::INT),
+        ]
+    }
 }
 
 pub trait Pipeline {
+    /// A vertex should be capable of casting itself to buffer data, and configuring
+    /// the vertex attribute pointer, by knowing it's own memory layout.
     type Vertex: Copy + Pod;
 }
 
@@ -93,7 +113,7 @@ impl<P: Pipeline> Mesh<P> {
 #[derive(Default)]
 struct SpritePipeline;
 impl Pipeline for SpritePipeline {
-    type Vertex = [f32; 4];
+    type Vertex = Vertex;
 }
 
 /// Type which holds onto the OpenGL context, and the various objects that surrounds it.
@@ -101,11 +121,11 @@ pub struct Renderer {
     gl: Context,
 
     texture: Texture,
-    vertex_array: VertexArray,
+    vertex_array: Option<VertexArrayId>,
     program: Program,
+    vertex_buffer: Buffer<SpritePipeline>,
 
     grid_size: Vec2<usize>,
-    grid_textures: Buffer<i32>,
     vert_per_quad: usize,
     vert_size: usize,
 
@@ -115,18 +135,15 @@ pub struct Renderer {
 impl Renderer {
     pub fn new(gl: Context) -> Result<Self, RenderError> {
         let (grid_height, grid_width) = (6, 6);
-        let (vert_pos, text_pos, tile_pos, tile_size, text_idx) = (0, 1, 2, 3, 4);
 
         let program = Program::new(
             &gl,
             include_str!("shaders/vss.glsl"),
             include_str!("shaders/fss.glsl"),
             &[
-                (vert_pos, "vert_pos"),
-                (text_pos, "text_pos"),
-                (tile_pos, "tile_pos"),
-                (tile_size, "tile_size"),
-                (text_idx, "text_idx"),
+                (VERT_POS, "vert_pos"),
+                (TEXT_POS, "text_pos"),
+                (TEXT_IDX, "text_idx"),
             ],
         )?;
 
@@ -139,10 +156,10 @@ impl Renderer {
             fn quad(x: f32, y: f32, size: f32) -> Quad<SpritePipeline> {
                 let s = size;
                 Quad::new(
-                    [ 0.5 + x + s,  0.5 + y + s,   1.0, 1.0],
-                    [ 0.5 + x + s, -0.5 + y    ,   1.0, 0.0],
-                    [-0.5 + x    ,  0.5 + y + s,   0.0, 1.0],
-                    [-0.5 + x    , -0.5 + y    ,   0.0, 0.0],
+                    Vertex { pos: [ 0.5 + x + s,  0.5 + y + s], tex: [1.0, 1.0], idx: 0 },
+                    Vertex { pos: [ 0.5 + x + s, -0.5 + y    ], tex: [1.0, 0.0], idx: 0 },
+                    Vertex { pos: [-0.5 + x    ,  0.5 + y + s], tex: [0.0, 1.0], idx: 0 },
+                    Vertex { pos: [-0.5 + x    , -0.5 + y    ], tex: [0.0, 0.0], idx: 0 },
                 )
             }
 
@@ -155,48 +172,39 @@ impl Renderer {
                 mesh.push_quad(quad(x as _, y as _, 0.0));
             }
 
-            // TODO: casting on an array doesn't work, because T in Buffer<T> measures the size
-            // of T and this causes something like [T; 4] to fail as a result of the miss guided
-            // assumption that T is of size [T; 4]
-            let casted: &[f32] = cast_slice(&mesh.data);
+            Buffer::immutable(&gl, glow::ARRAY_BUFFER, &mesh.data)
+        }?;
 
-            Buffer::immutable(
-                &gl,
-                glow::ARRAY_BUFFER,
-                casted,
-                vec![
-                    VertexAttribute::new(vert_pos, 2),
-                    VertexAttribute::new(text_pos, 2),
-                ],
-            )?
-        };
+        let vertex_array;
+        unsafe {
+            vertex_array = Some(gl.create_vertex_array()?);
+            gl.bind_vertex_array(vertex_array);
 
-        let texture_array_indices = {
-            #[rustfmt::skip]
-            let indices: Vec<i32> = vec![0; grid_height * grid_width * VERT_PER_QUAD * VERT_SIZE];
-
-            Buffer::immutable(
-                &gl,
-                glow::ARRAY_BUFFER,
-                &indices,
-                vec![VertexAttribute::new(text_idx, 1)],
-            )?
-        };
-
-        let vertex_array = VertexArray::new(&gl, |gl| {
-            vertex_buffer.setup(&gl);
-            texture_array_indices.setup(&gl);
-        })?;
+            vertex_buffer.bind(&gl);
+            let mut offset = 0;
+            for attr in Vertex::vertex_attributes().iter() {
+                gl.vertex_attrib_pointer_f32(
+                    attr.location,
+                    attr.size,
+                    attr.data_type,
+                    false,
+                    Vertex::stride_size() as _,
+                    offset,
+                );
+                gl.enable_vertex_attrib_array(attr.location);
+                offset += attr.size * attr.size_type as i32;
+            }
+        }
 
         Ok(Self {
             vertex_array,
             program,
             texture,
+            vertex_buffer,
 
             gl,
 
             grid_size: Vec2::new(grid_height, grid_width),
-            grid_textures: texture_array_indices,
             vert_per_quad: VERT_PER_QUAD,
             vert_size: VERT_SIZE,
 
@@ -228,15 +236,15 @@ impl<'a> System<'a> for Renderer {
     ) {
         let Self { gl, .. } = self;
 
-        for (_, coord, text) in (&*entities, &coordinates, &textures).join() {
-            let t = text.0.unwrap() as _;
-            let (x, y) = (coord.0.x, coord.0.y);
+        // for (_, coord, text) in (&*entities, &coordinates, &textures).join() {
+        //     let t = text.0.unwrap() as _;
+        //     let (x, y) = (coord.0.x, coord.0.y);
 
-            // TODO: refactor into a `grid model` of some kind.
-            let index = (x * self.grid_size.x * self.vert_per_quad * self.vert_size)
-                + y * self.vert_per_quad * self.vert_size;
-            self.grid_textures.update(&gl, index as _, &[t; 6]);
-        }
+        //     // TODO: refactor into a `grid model` of some kind.
+        //     let index = (x * self.grid_size.x * self.vert_per_quad * self.vert_size)
+        //         + y * self.vert_per_quad * self.vert_size;
+        //     self.grid_textures.update(&gl, index as _, &[t; 6]);
+        // }
 
         let seconds = crate::units::Seconds::<f32>::from(start.0.elapsed());
 
@@ -279,7 +287,7 @@ impl<'a> System<'a> for Renderer {
             self.program.use_program(&gl);
             self.program.set_uniform(&gl, "transform", m);
             self.texture.bind(&gl);
-            self.vertex_array.bind(&gl);
+            gl.bind_vertex_array(self.vertex_array);
             gl.draw_arrays(
                 glow::TRIANGLES,
                 0,
