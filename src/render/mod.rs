@@ -85,11 +85,8 @@ pub struct Mesh<P: Pipeline> {
 
 impl<P: Pipeline> Mesh<P> {
     pub fn push_quad(&mut self, quad: Quad<P>) {
-        // FIXME: this currently doesn't work, because `P::Vertex` is an array
-        // and doesn't get casted correctly.
-
         let Quad { a, b, c, d } = quad;
-        self.data.extend([a, b, c, c, b, d].iter());
+        self.data.extend(&[a, b, c, c, b, d]);
     }
 }
 
@@ -153,28 +150,20 @@ impl Renderer {
                 .map(|x| (0..grid_width).map(move |y| (x, y)))
                 .flatten();
 
-            // let mut mesh: Mesh<SpritePipeline> = Mesh::default();
-            let mut mesh: Vec<f32> = Vec::new();
+            let mut mesh: Mesh<SpritePipeline> = Mesh::default();
             for (x, y) in grid {
-                // mesh.push_quad(quad(x as _, y as _, 0.0));
-
-                let Quad { a, b, c, d } = quad(x as _, y as _, 0.0);
-                mesh.extend(&a);
-                mesh.extend(&b);
-                mesh.extend(&c);
-                mesh.extend(&c);
-                mesh.extend(&b);
-                mesh.extend(&d);
+                mesh.push_quad(quad(x as _, y as _, 0.0));
             }
 
-            // Vec<f32> sums 113076
-            // Mesh<SpritePipeline> sums 113076
-            // dbg!(&data.iter().map(|&x| x as u32).sum::<u32>());
+            // TODO: casting on an array doesn't work, because T in Buffer<T> measures the size
+            // of T and this causes something like [T; 4] to fail as a result of the miss guided
+            // assumption that T is of size [T; 4]
+            let casted: &[f32] = cast_slice(&mesh.data);
 
             Buffer::immutable(
                 &gl,
                 glow::ARRAY_BUFFER,
-                &mesh,
+                casted,
                 vec![
                     VertexAttribute::new(vert_pos, 2),
                     VertexAttribute::new(text_pos, 2),

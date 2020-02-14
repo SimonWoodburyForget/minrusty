@@ -38,7 +38,6 @@ pub struct Buffer<T> {
     buffer_id: Option<BufferId>,
     buffer_type: u32,
     size: usize,
-    phantom: std::marker::PhantomData<T>,
     layout: Layout<T>,
 }
 
@@ -54,11 +53,10 @@ impl<T: Pod> Buffer<T> {
         let size = data.len();
         let buffer_id = Some(unsafe { gl.create_buffer()? });
 
-        let data: &[u8] = super::cast_slice(data);
-        // let (head, data, tail) = unsafe { data.align_to::<u8>() };
-
-        // assert!(head.is_empty());
-        // assert!(tail.is_empty());
+        // let data: &[u8] = super::cast_slice(data);
+        let (head, data, tail) = unsafe { data.align_to::<u8>() };
+        assert!(head.is_empty());
+        assert!(tail.is_empty());
 
         unsafe {
             gl.bind_buffer(buffer_type, buffer_id);
@@ -72,7 +70,6 @@ impl<T: Pod> Buffer<T> {
             buffer_id,
             buffer_type,
             size,
-            phantom: std::marker::PhantomData,
             layout,
         })
     }
