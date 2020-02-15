@@ -11,17 +11,19 @@ pub struct Buffer<P: Pipeline> {
 }
 
 impl<P: Pipeline> Buffer<P> {
-    pub fn immutable(
+    /// # SAFETY
+    ///
+    /// unsafe because `gl.buffer_data_u8_slice` reads `data` asynchronously, which
+    /// means mutating it after this function is called could result in errors, as
+    /// the underlaying implementation just gives OpenGL a raw pointer into the slice.
+    pub unsafe fn immutable(
         gl: &Context,
         buffer_type: u32,
         data: &[P::Vertex],
     ) -> Result<Self, RenderError> {
-        // SAFETY: questionable, more testing needed.
-
         let size = data.len();
         let buffer_id = Some(unsafe { gl.create_buffer()? });
 
-        // let data: &[u8] = super::cast_slice(data);
         let (head, data, tail) = unsafe { data.align_to::<u8>() };
         assert!(head.is_empty());
         assert!(tail.is_empty());
@@ -44,16 +46,18 @@ impl<P: Pipeline> Buffer<P> {
         unimplemented!();
     }
 
-    pub fn update(&self, gl: &Context, index: i32, data: &[P::Vertex]) {
+    pub unsafe fn update(&self, gl: &Context, index: i32, data: &[P::Vertex]) {
         assert!(index as usize + data.len() <= self.size);
 
-        let (head, body, tail) = unsafe { data.align_to::<u8>() };
+        let (head, data, tail) = unsafe { data.align_to::<u8>() };
         assert!(head.is_empty());
         assert!(tail.is_empty());
 
-        self.bind(&gl);
-        unsafe { gl.buffer_sub_data_u8_slice(self.buffer_type, index, body) };
-        self.unbind(&gl);
+        unsafe {
+            gl.bind_buffer(self.buffer_type, self.buffer_id);
+            gl.buffer_sub_data_u8_slice(self.buffer_type, index, data);
+            gl.bind_buffer(self.buffer_type, None)
+        };
     }
 
     pub fn bind(&self, gl: &Context) {

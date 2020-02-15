@@ -28,20 +28,50 @@ use glow::*;
 use specs::prelude::*;
 use vek::*;
 
+pub enum DataType {
+    Float,
+    Int,
+    Uint,
+}
+
+impl DataType {
+    fn size(&self) -> i32 {
+        match self {
+            DataType::Float => 4,
+            DataType::Int => 4,
+            DataType::Uint => 4,
+        }
+    }
+
+    fn data_type(&self) -> u32 {
+        match self {
+            DataType::Float => glow::FLOAT,
+            DataType::Int => glow::INT,
+            DataType::Uint => glow::UNSIGNED_INT,
+        }
+    }
+
+    fn normalize(&self) -> bool {
+        false
+    }
+}
+
 pub struct VertexAttribute {
     location: u32,
     size: i32,
-    size_type: usize,
+    size_type: i32,
     data_type: u32,
+    norm: bool,
 }
 
 impl VertexAttribute {
-    fn new(location: u32, size: i32, size_type: usize, data_type: u32) -> Self {
+    fn new(location: u32, size: i32, dtype: DataType) -> Self {
         Self {
             location,
             size,
-            size_type,
-            data_type,
+            size_type: dtype.size(),
+            data_type: dtype.data_type(),
+            norm: dtype.normalize(),
         }
     }
 }
@@ -56,25 +86,26 @@ pub struct Vertex {
     tex: [f32; 2],
 
     /// Texture array index.
-    idx: i32,
+    idx: u32,
 }
 
 unsafe impl Pod for Vertex {}
 
 const VERT_POS: u32 = 0;
 const TEXT_POS: u32 = 1;
-const TEXT_IDX: u32 = 4;
+const TEXT_IDX: u32 = 2;
 
 impl Vertex {
     fn stride_size() -> usize {
-        std::mem::size_of::<f32>() * 4 + std::mem::size_of::<i32>()
+        std::mem::size_of::<Self>()
     }
 
     fn vertex_attributes() -> [VertexAttribute; 3] {
         [
-            VertexAttribute::new(VERT_POS, 2, std::mem::size_of::<f32>() as _, glow::FLOAT),
-            VertexAttribute::new(TEXT_POS, 2, std::mem::size_of::<f32>() as _, glow::FLOAT),
-            VertexAttribute::new(TEXT_IDX, 1, std::mem::size_of::<i32>() as _, glow::INT),
+            VertexAttribute::new(VERT_POS, 2, DataType::Float),
+            VertexAttribute::new(TEXT_POS, 2, DataType::Float),
+            // FIXME: `Float` works but `Uint` doesn't
+            VertexAttribute::new(TEXT_IDX, 1, DataType::Float),
         ]
     }
 }
@@ -98,12 +129,31 @@ impl<P: Pipeline> Quad<P> {
     }
 }
 
+impl Quad<SpritePipeline> {
+    #[rustfmt::skip]
+    pub fn rect(x: f32, y: f32, size: f32, t: u32) -> Self {
+        let s = size;
+        Self::new(
+            Vertex { pos: [ 0.5 + x + s,  0.5 + y + s], tex: [1.0, 1.0], idx: t },
+            Vertex { pos: [ 0.5 + x + s, -0.5 + y    ], tex: [1.0, 0.0], idx: t },
+            Vertex { pos: [-0.5 + x    ,  0.5 + y + s], tex: [0.0, 1.0], idx: t },
+            Vertex { pos: [-0.5 + x    , -0.5 + y    ], tex: [0.0, 0.0], idx: t },
+        )
+    }
+}
+
 #[derive(Default)]
 pub struct Mesh<P: Pipeline> {
-    pub data: Vec<P::Vertex>,
+    data: Vec<P::Vertex>,
 }
 
 impl<P: Pipeline> Mesh<P> {
+    /// Clear vertices to reuse allocated memory.
+    pub fn clear(&mut self) {
+        self.data.clear();
+    }
+
+    /// Push a quad at the end of the mesh.
     pub fn push_quad(&mut self, quad: Quad<P>) {
         let Quad { a, b, c, d } = quad;
         self.data.extend(&[a, b, c, c, b, d]);
@@ -126,8 +176,7 @@ pub struct Renderer {
     vertex_buffer: Buffer<SpritePipeline>,
 
     grid_size: Vec2<usize>,
-    vert_per_quad: usize,
-    vert_size: usize,
+    tile_mesh: Mesh<SpritePipeline>,
 
     frame: u64,
 }
@@ -149,31 +198,21 @@ impl Renderer {
 
         let texture = Texture::new(&gl, 32, 32, 6)?;
 
-        const VERT_PER_QUAD: usize = 6;
-        const VERT_SIZE: usize = 4;
+        // pre-fill grid, not strickly required
+        let mut tile_mesh: Mesh<SpritePipeline> = Mesh::default();
         let vertex_buffer = {
-            #[rustfmt::skip]
-            fn quad(x: f32, y: f32, size: f32) -> Quad<SpritePipeline> {
-                let s = size;
-                Quad::new(
-                    Vertex { pos: [ 0.5 + x + s,  0.5 + y + s], tex: [1.0, 1.0], idx: 0 },
-                    Vertex { pos: [ 0.5 + x + s, -0.5 + y    ], tex: [1.0, 0.0], idx: 0 },
-                    Vertex { pos: [-0.5 + x    ,  0.5 + y + s], tex: [0.0, 1.0], idx: 0 },
-                    Vertex { pos: [-0.5 + x    , -0.5 + y    ], tex: [0.0, 0.0], idx: 0 },
-                )
-            }
-
             let grid = (0..grid_height)
                 .map(|x| (0..grid_width).map(move |y| (x, y)))
                 .flatten();
 
-            let mut mesh: Mesh<SpritePipeline> = Mesh::default();
             for (x, y) in grid {
-                mesh.push_quad(quad(x as _, y as _, 0.0));
+                tile_mesh.push_quad(Quad::rect(x as _, y as _, 0.0, 0));
             }
 
-            Buffer::immutable(&gl, glow::ARRAY_BUFFER, &mesh.data)
+            unsafe { Buffer::immutable(&gl, glow::ARRAY_BUFFER, &tile_mesh.data) }
         }?;
+        unsafe { vertex_buffer.update(&gl, 0, &tile_mesh.data) };
+        // tile_mesh.clear();
 
         let vertex_array;
         unsafe {
@@ -187,12 +226,12 @@ impl Renderer {
                     attr.location,
                     attr.size,
                     attr.data_type,
-                    false,
+                    attr.norm,
                     Vertex::stride_size() as _,
                     offset,
                 );
                 gl.enable_vertex_attrib_array(attr.location);
-                offset += attr.size * attr.size_type as i32;
+                offset += attr.size * attr.size_type;
             }
         }
 
@@ -204,9 +243,9 @@ impl Renderer {
 
             gl,
 
+            tile_mesh,
+
             grid_size: Vec2::new(grid_height, grid_width),
-            vert_per_quad: VERT_PER_QUAD,
-            vert_size: VERT_SIZE,
 
             frame: 0,
         })
@@ -234,11 +273,21 @@ impl<'a> System<'a> for Renderer {
         &mut self,
         (entities, start, screen_size, _positions, coordinates, textures): Self::SystemData,
     ) {
-        let Self { gl, .. } = self;
+        let Self {
+            gl,
+            tile_mesh,
+            vertex_buffer,
+            ..
+        } = self;
 
-        // for (_, coord, text) in (&*entities, &coordinates, &textures).join() {
-        //     let t = text.0.unwrap() as _;
-        //     let (x, y) = (coord.0.x, coord.0.y);
+        tile_mesh.clear();
+        for (_, coord, text) in (&*entities, &coordinates, &textures).join() {
+            let t = text.0.unwrap();
+            let (x, y) = (coord.0.x, coord.0.y);
+
+            tile_mesh.push_quad(Quad::rect(x as _, y as _, 0.0, t as _));
+        }
+        unsafe { vertex_buffer.update(&gl, 0, &tile_mesh.data) };
 
         //     // TODO: refactor into a `grid model` of some kind.
         //     let index = (x * self.grid_size.x * self.vert_per_quad * self.vert_size)
@@ -291,7 +340,7 @@ impl<'a> System<'a> for Renderer {
             gl.draw_arrays(
                 glow::TRIANGLES,
                 0,
-                (self.vert_per_quad * self.grid_size.product()) as _,
+                (self.tile_mesh.data.len() * self.grid_size.product()) as _,
             );
 
             // gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
