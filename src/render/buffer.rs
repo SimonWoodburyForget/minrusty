@@ -13,9 +13,7 @@ pub struct Buffer<P: Pipeline> {
 impl<P: Pipeline> Buffer<P> {
     /// # SAFETY
     ///
-    /// unsafe because `gl.buffer_data_u8_slice` reads `data` asynchronously, which
-    /// means mutating it after this function is called could result in errors, as
-    /// the underlaying implementation just gives OpenGL a raw pointer into the slice.
+    /// `data` will be read after this function has been called.
     pub unsafe fn immutable(
         gl: &Context,
         buffer_type: u32,
@@ -42,22 +40,37 @@ impl<P: Pipeline> Buffer<P> {
         })
     }
 
-    pub fn _dynamic(_gl: &Context, _buffer_type: u32, _size: usize) -> Result<Self, RenderError> {
-        unimplemented!();
+    pub fn dynamic(gl: &Context, buffer_type: u32, size: usize) -> Result<Self, RenderError> {
+        let buffer_id;
+        unsafe {
+            // SAFETY: should be safe because it doesn't pass any raw memory.
+            buffer_id = Some(gl.create_buffer()?);
+            gl.bind_buffer(buffer_type, buffer_id);
+            gl.buffer_data_size(buffer_type, size as _, glow::STREAM_DRAW);
+            gl.bind_buffer(buffer_type, None);
+        }
+
+        Ok(Self {
+            buffer_id,
+            buffer_type,
+            size,
+            phantom: std::marker::PhantomData,
+        })
     }
 
+    /// # SAFETY
+    ///
+    /// `data` will be read after this function has been called.
     pub unsafe fn update(&self, gl: &Context, index: i32, data: &[P::Vertex]) {
         assert!(index as usize + data.len() <= self.size);
 
-        let (head, data, tail) = unsafe { data.align_to::<u8>() };
+        let (head, data, tail) = data.align_to::<u8>();
         assert!(head.is_empty());
         assert!(tail.is_empty());
 
-        unsafe {
-            gl.bind_buffer(self.buffer_type, self.buffer_id);
-            gl.buffer_sub_data_u8_slice(self.buffer_type, index, data);
-            gl.bind_buffer(self.buffer_type, None)
-        };
+        gl.bind_buffer(self.buffer_type, self.buffer_id);
+        gl.buffer_sub_data_u8_slice(self.buffer_type, index, data);
+        gl.bind_buffer(self.buffer_type, None)
     }
 
     pub fn bind(&self, gl: &Context) {

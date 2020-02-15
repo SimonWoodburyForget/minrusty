@@ -198,21 +198,18 @@ impl Renderer {
 
         let texture = Texture::new(&gl, 32, 32, 6)?;
 
-        // pre-fill grid, not strickly required
-        let mut tile_mesh: Mesh<SpritePipeline> = Mesh::default();
-        let vertex_buffer = {
-            let grid = (0..grid_height)
-                .map(|x| (0..grid_width).map(move |y| (x, y)))
-                .flatten();
+        //     let grid = (0..grid_height)
+        //         .map(|x| (0..grid_width).map(move |y| (x, y)))
+        //         .flatten();
 
-            for (x, y) in grid {
-                tile_mesh.push_quad(Quad::rect(x as _, y as _, 0.0, 0));
-            }
+        //     for (x, y) in grid {
+        //         tile_mesh.push_quad(Quad::rect(x as _, y as _, 0.0, 0));
+        //     }
 
-            unsafe { Buffer::immutable(&gl, glow::ARRAY_BUFFER, &tile_mesh.data) }
-        }?;
-        unsafe { vertex_buffer.update(&gl, 0, &tile_mesh.data) };
-        // tile_mesh.clear();
+        let tile_mesh = Mesh::default();
+
+        let buffer_size = 6 * 4 * 1000;
+        let vertex_buffer = Buffer::dynamic(&gl, glow::ARRAY_BUFFER, buffer_size)?;
 
         let vertex_array;
         unsafe {
