@@ -6,6 +6,7 @@ use wasm_bindgen::JsCast;
 #[cfg(feature = "web")]
 use winit::platform::web::WindowExtWebSys;
 
+#[allow(dead_code)]
 pub enum Event {
     /// Aften the window is drawn.
     Draw,
@@ -120,9 +121,7 @@ impl Window {
                 self.windowed_context.swap_buffers().unwrap();
             }
 
-            Event::Tick => {
-                self.winit_window().request_redraw();
-            }
+            _ => {}
         }
     }
 }

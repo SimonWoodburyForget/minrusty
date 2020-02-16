@@ -1,7 +1,6 @@
 use super::*;
 
 use glow::*;
-use std::mem;
 
 pub struct Buffer<P: Pipeline> {
     buffer_id: Option<BufferId>,
@@ -14,23 +13,22 @@ impl<P: Pipeline> Buffer<P> {
     /// # SAFETY
     ///
     /// `data` will be read after this function has been called.
+    #[allow(dead_code)]
     pub unsafe fn immutable(
         gl: &Context,
         buffer_type: u32,
         data: &[P::Vertex],
     ) -> Result<Self, RenderError> {
         let size = data.len();
-        let buffer_id = Some(unsafe { gl.create_buffer()? });
+        let buffer_id = Some(gl.create_buffer()?);
 
-        let (head, data, tail) = unsafe { data.align_to::<u8>() };
+        let (head, data, tail) = data.align_to::<u8>();
         assert!(head.is_empty());
         assert!(tail.is_empty());
 
-        unsafe {
-            gl.bind_buffer(buffer_type, buffer_id);
-            gl.buffer_data_u8_slice(buffer_type, data, glow::STATIC_DRAW);
-            gl.bind_buffer(buffer_type, None);
-        }
+        gl.bind_buffer(buffer_type, buffer_id);
+        gl.buffer_data_u8_slice(buffer_type, data, glow::STATIC_DRAW);
+        gl.bind_buffer(buffer_type, None);
 
         Ok(Self {
             buffer_id,
@@ -79,7 +77,7 @@ impl<P: Pipeline> Buffer<P> {
         }
     }
 
-    pub fn unbind(&self, gl: &Context) {
+    pub fn _unbind(&self, gl: &Context) {
         unsafe {
             gl.bind_buffer(self.buffer_type, None);
         }

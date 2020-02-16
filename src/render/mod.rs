@@ -28,6 +28,7 @@ use glow::*;
 use specs::prelude::*;
 use vek::*;
 
+#[allow(dead_code)]
 pub enum DataType {
     Float,
     Int,
@@ -278,23 +279,22 @@ impl<'a> System<'a> for Renderer {
         } = self;
 
         tile_mesh.clear();
-        for (_, coord, text) in (&*entities, &coordinates, &textures).join() {
-            let t = text.0.unwrap();
-            let (x, y) = (coord.0.x, coord.0.y);
 
+        // TODO: this needs a way to handle changing vertices count.
+        // NOTE: this could be done much more efficiently,
+        // but we're not rendering thousands of tiles yet.
+        for (_, coord, text) in (&*entities, &coordinates, &textures).join() {
+            let t = text.0.unwrap_or(0);
+            let (x, y) = (coord.0.x, coord.0.y);
             tile_mesh.push_quad(Quad::rect(x as _, y as _, 0.0, t as _));
         }
-        unsafe { vertex_buffer.update(&gl, 0, &tile_mesh.data) };
 
-        //     // TODO: refactor into a `grid model` of some kind.
-        //     let index = (x * self.grid_size.x * self.vert_per_quad * self.vert_size)
-        //         + y * self.vert_per_quad * self.vert_size;
-        //     self.grid_textures.update(&gl, index as _, &[t; 6]);
-        // }
+        unsafe {
+            // SAFETY: safe if we don't mutate the mesh before drawing.
+            vertex_buffer.update(&gl, 0, &tile_mesh.data)
+        };
 
         let seconds = crate::units::Seconds::<f32>::from(start.0.elapsed());
-
-        let _scale = 0.3 * seconds.0.sin();
 
         let ScreenSize((w, h)) = *screen_size;
 
@@ -320,7 +320,7 @@ impl<'a> System<'a> for Renderer {
             1.0, 0.0, 0.0, 0.0,
             0.0, 1.0, 0.0, 0.0,
             0.0, 0.0, 1.0, 0.0,
-            x, y, 0.0, 1.0,
+              x,   y, 0.0, 1.0,
         );
 
         let m = movit * ortho * scale;

@@ -1,6 +1,5 @@
 use crate::components::*;
 use crate::state::*;
-use crate::units::*;
 
 use specs::prelude::*;
 

@@ -2,6 +2,7 @@ mod error;
 #[cfg(feature = "web")]
 mod main_web;
 // mod platform;
+mod clock;
 mod components;
 mod input;
 pub mod loader;
@@ -17,6 +18,7 @@ use window::Window;
 
 use shrev::*;
 use specs::prelude::*;
+use std::time::Duration;
 
 #[cfg(feature = "web")]
 mod wasm {
@@ -40,6 +42,7 @@ pub fn log(x: &str) {
 pub struct ScreenSize(pub (u32, u32));
 
 pub fn main() {
+    let mut clock = clock::Clock::new();
     let event_loop = winit::event_loop::EventLoop::new();
     let (window, renderer) = Window::new(&event_loop).unwrap();
 
@@ -62,30 +65,38 @@ pub fn main() {
             *ss = ScreenSize(window.dimensions());
         }
 
-        use winit::event::{Event, KeyboardInput, WindowEvent};
+        use winit::event::{Event, KeyboardInput, StartCause, WindowEvent};
 
         match event {
+            Event::NewEvents(StartCause::Init) => {}
+
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                // WindowEvent::Resized(ref size) => crate::log(&format!("{:?}", size)),
+
+                WindowEvent::Resized(ref _size) => {}
+
                 WindowEvent::KeyboardInput { input, .. } => {
                     game.ecs
                         .write_resource::<EventChannel<KeyboardInput>>()
                         .single_write(input);
                 }
-                _ => (),
+
+                _ => {}
             },
 
             Event::RedrawRequested(_) => {
+                clock.tick(Duration::from_millis(16));
                 game.update();
                 window.on_event(window::Event::Draw);
             }
 
-            Event::MainEventsCleared => window.on_event(window::Event::Tick),
+            Event::MainEventsCleared => {
+                window.winit_window().request_redraw();
+            }
 
-            // TODO:
-            // - LoopDestroyed => return
-            _ => (),
+            Event::LoopDestroyed => {}
+
+            _ => {}
         }
     });
 }
