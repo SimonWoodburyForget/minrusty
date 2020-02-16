@@ -91,19 +91,12 @@ impl<'a> System<'a> for AssetSystem {
         self.modified.clear();
         self.inserted.clear();
 
-        {
-            let events = names.channel().read(&mut self.reader_id.as_mut().unwrap());
-            for event in events {
-                match event {
-                    ComponentEvent::Modified(id) => {
-                        self.modified.add(*id);
-                    }
-                    ComponentEvent::Inserted(id) => {
-                        self.inserted.add(*id);
-                    }
-                    _ => {}
-                }
-            }
+        for event in names.channel().read(&mut self.reader_id.as_mut().unwrap()) {
+            match event {
+                ComponentEvent::Modified(id) => self.modified.add(*id),
+                ComponentEvent::Inserted(id) => self.inserted.add(*id),
+                _ => Default::default(),
+            };
         }
 
         // Every named entity is potentially given a texture index, which is
