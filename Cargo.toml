@@ -28,7 +28,7 @@ image = "0.22"
 shrev = "1.1"
 
 [dependencies.specs]
-version = "0.15"
+version = "0.16"
 features = ["specs-derive"]
 
 # NOTE: remove parallel feature from specs for Wasm target

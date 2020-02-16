@@ -33,13 +33,8 @@ impl GameState {
     pub fn new(renderer: crate::render::Renderer) -> Self {
         let mut world = World::new();
 
-        world.register::<Name>();
-        world.register::<Coordinate>();
-        world.register::<TextureIndex>();
-
         world.insert(GameStart::default());
         world.insert(DeltaTime::default());
-        // world.insert(AssetSystem::default());
 
         let mut dispatcher = DispatcherBuilder::new()
             .with(AssetSystem::default(), "asset-system", &[])
