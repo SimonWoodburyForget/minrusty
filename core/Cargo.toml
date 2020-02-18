@@ -1,0 +1,62 @@
+[package]
+name = "minrusty"
+version = "0.1.0"
+authors = ["Simon <simonwoodburyforget@gmail.com>"]
+edition = "2018"
+license = "GNUv3"
+repository = "https://github.com/SimonWoodburyForget/minrusty/"
+description = '''
+An experimental game development side project.
+'''
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+web = ["glow/web-sys", "winit/web-sys", "web-sys", "wasm-bindgen", "instant/wasm-bindgen"]
+nat = ["glow/glutin", "glutin", "specs/parallel"]
+
+# NOTE: native is default to prevent IDE related problems.
+default = ["nat"]
+
+################################################################
+# Native and Web Dependencies
+[dependencies]
+specs-derive = "0.4.0"
+vek = "0.9"
+image = "0.22"
+shrev = "1.1"
+
+[dependencies.specs]
+version = "0.16"
+features = ["specs-derive"]
+
+# NOTE: remove parallel feature from specs for Wasm target
+# because it causes errors when using Dispatcher.
+default-features = false
+
+[dependencies.glow]
+version = "0.4"
+default-features = false
+
+[dependencies.winit]
+version = "0.20"
+
+################################################################
+# Web Dependencies
+[dependencies.wasm-bindgen]
+version = "0.2"
+optional = true
+
+[dependencies.web-sys]
+version = "0.3"
+optional = true
+
+[dependencies.instant]
+version = "0.1"
+
+################################################################
+# Native Dependencies
+[dependencies.glutin]
+version = "0.22"
+optional = true

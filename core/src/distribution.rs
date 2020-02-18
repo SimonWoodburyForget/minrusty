@@ -37,6 +37,7 @@ impl DistVolume {
             storage: Default::default(),
             destination,
         });
+        node_map.insert(coordinate.into_array(), node_index);
 
         // find neighbours of new node
         let neighbours = [
@@ -55,10 +56,18 @@ impl DistVolume {
         }
 
         // attach new node to neighbour
-        node_map.insert(coordinate.into_array(), node_index);
         let node_index_other = node_map.get(&[x, y]).map(|x| *x);
-
         edges.push(Edge(node_index, node_index_other));
+    }
+
+    /// Pulls items towards the externals.
+    fn step(&mut self) {
+        let externals = self
+            .edges
+            .iter()
+            .filter(|e| e.1.is_none())
+            .map(|e| e.0)
+            .collect::<Vec<usize>>();
     }
 }
 
