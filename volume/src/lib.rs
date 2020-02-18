@@ -6,6 +6,7 @@ const CHUNK_SIZE: usize = 32;
 type Chunk<T> = [T; CHUNK_SIZE * CHUNK_SIZE];
 
 /// Spacial map of statically sized 32 by 32 chunks.
+#[derive(Default)]
 pub struct SpacialMap<T> {
     chunks: BTreeMap<[u32; 2], Chunk<T>>,
 }
@@ -39,7 +40,7 @@ mod index {
     }
 }
 
-impl<T> SpacialMap<T> {
+impl<T: Default + Copy> SpacialMap<T> {
     /// Get's a tile.
     pub fn get<P: Into<Index>>(&self, xy: P) -> Option<&T> {
         let Index { xy, n } = xy.into();
@@ -48,9 +49,25 @@ impl<T> SpacialMap<T> {
 
     pub fn set<P: Into<Index>>(&mut self, xy: P, v: T) {
         let Index { xy, n } = xy.into();
-
         if let Some(chunk) = self.chunks.get_mut(&xy) {
             chunk[n] = v;
+        } else {
+            let mut arr = [T::default(); CHUNK_SIZE * CHUNK_SIZE];
+            arr[n] = v;
+            self.chunks.insert(xy, arr);
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn volume_get_set() {
+        let mut map: SpacialMap<f32> = Default::default();
+        map.set([1, 2], 3.0);
+        assert_eq!(map.get([1, 2]), Some(&3.0));
+    }
+}
+
