@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 
 /// Chunk size of 32 results in 1024 size chunks.
-const CHUNK_SIZE: u32 = 32;
+const CHUNK_SIZE: usize = 32;
 
-type Chunk<T> = [T; CHUNK_SIZE * CHUNK_SIZE],
+type Chunk<T> = [T; CHUNK_SIZE * CHUNK_SIZE];
 
 /// Spacial map of statically sized 32 by 32 chunks.
 pub struct SpacialMap<T> {
@@ -29,7 +29,7 @@ fn chunkmap_index(position: [u32; 2]) -> Index {
     let n = (x - cx) * (y - cy);
     Index {
         xy: [cx, cy],
-        n: nn as usize
+        n: n as usize
     }
 }
 
@@ -37,15 +37,15 @@ impl<T> SpacialMap<T> {
     /// Get's a tile.
     pub fn get(&self, xy: [u32; 2]) -> Option<&T> {
         let Index { xy, n } = chunkmap_index(xy);
-        self.chunks.get(&xy).map(|c| &c.tiles[n])
+        self.chunks.get(&xy).map(|c| &c[n])
     }
 
     pub fn set(&mut self, xy: [u32; 2], v: T) {
         let Index { xy, n } = chunkmap_index(xy);
-        if let Some(chunk) = self.chunks[&cx_cy] {
-            chunk.tiles[n] = v
-        }
+        // if let Some(chunk) = self.chunks[&cx_cy] {
+        //     chunk.tiles[n] = v
+        // }
 
-        self.chunks.set(cx_cy
+
     }
 }

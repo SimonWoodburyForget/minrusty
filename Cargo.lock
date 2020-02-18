@@ -664,6 +664,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "minrusty-volume"
+version = "0.1.0"
+dependencies = [
+ "vek 0.9.11 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "mio"
 version = "0.6.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
