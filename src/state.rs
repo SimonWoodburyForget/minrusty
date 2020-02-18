@@ -1,4 +1,5 @@
 use crate::components::*;
+use crate::distribution::DistSystem;
 use crate::input::*;
 use crate::loader::*;
 use crate::physics::*;
@@ -41,6 +42,7 @@ impl GameState {
             .with(InputSystem(None), "input-system", &[])
             .with(PlayerSystem, "player-system", &["input-system"])
             .with(PhysicSystem, "physic-system", &["player-system"])
+            .with(DistSystem::default(), "distribution-system", &[])
             .with_thread_local(renderer)
             .build();
         dispatcher.setup(&mut world);
@@ -58,6 +60,7 @@ impl GameState {
             .with(Name(name.into()))
             .with(Coordinate(Vec2::new(x, y)))
             .with(TextureIndex(None))
+            .with(Conveyor::default())
             .build();
     }
 

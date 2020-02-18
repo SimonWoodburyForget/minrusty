@@ -50,6 +50,13 @@ pub struct RenderId(pub Option<usize>);
 #[derive(Component, Clone, Copy, Debug)]
 pub struct TextureIndex(pub Option<usize>);
 
-#[derive(Component, Default)]
-#[storage(NullStorage)]
+#[derive(Default)]
 pub struct Conveyor;
+impl Component for Conveyor {
+    type Storage = FlaggedStorage<Self, VecStorage<Self>>;
+}
+
+pub struct ItemDestination(pub Vec2<u32>);
+impl Component for ItemDestination {
+    type Storage = VecStorage<Self>;
+}
