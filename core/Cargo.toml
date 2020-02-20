@@ -26,6 +26,8 @@ specs-derive = "0.4.0"
 vek = "0.9"
 image = "0.22"
 shrev = "1.1"
+rand = "0.7"
+
 
 [dependencies.specs]
 version = "0.16"
@@ -60,3 +62,13 @@ version = "0.1"
 [dependencies.glutin]
 version = "0.22"
 optional = true
+
+################################################################
+# Benchmarking
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "volume_bench"
+harness = false

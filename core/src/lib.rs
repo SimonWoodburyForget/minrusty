@@ -12,6 +12,7 @@ mod player;
 mod render;
 mod state;
 mod units;
+pub mod volume;
 mod window;
 
 pub use error::Error;
