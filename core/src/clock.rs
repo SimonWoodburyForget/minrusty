@@ -1,5 +1,6 @@
 use std::{thread, time::Duration};
 
+use humantime::format_duration;
 use instant::Instant;
 
 fn system_sleep(duration: Duration) {
@@ -53,11 +54,14 @@ impl Clock {
         *last_time = now;
         *ticks += 1;
 
+        use std::convert::TryInto;
+
         if *ticks % 100 == 0 {
             println!(
-                "tick {} ({} tps)",
+                "tick {:6} ({} tps -- {:>16} pt)",
                 *ticks,
-                *ticks / (now.duration_since(*start_time).as_secs() + 1)
+                *ticks / (now.duration_since(*start_time).as_secs() + 1),
+                format_duration(now.duration_since(*start_time) / (*ticks).try_into().unwrap()),
             );
         }
     }

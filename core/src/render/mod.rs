@@ -25,7 +25,9 @@ use crate::ScreenSize;
 use memory::Pod;
 
 use glow::*;
+use instant::{Duration, Instant};
 use specs::prelude::*;
+use std::convert::TryInto;
 use vek::*;
 
 #[allow(dead_code)]
@@ -180,6 +182,7 @@ pub struct Renderer {
     tile_mesh: Mesh<SpritePipeline>,
 
     frame: u64,
+    frame_duration: Vec<Duration>,
 }
 
 impl Renderer {
@@ -246,6 +249,7 @@ impl Renderer {
             grid_size: Vec2::new(grid_height, grid_width),
 
             frame: 0,
+            frame_duration: Vec::new(),
         })
     }
 }
@@ -278,6 +282,12 @@ impl<'a> System<'a> for Renderer {
             ..
         } = self;
 
+        unsafe {
+            // here to avoid timing vsync blocking time
+            gl.clear(glow::COLOR_BUFFER_BIT);
+        }
+
+        let frame_start = Instant::now();
         tile_mesh.clear();
 
         // TODO: this needs a way to handle changing vertices count.
@@ -326,7 +336,6 @@ impl<'a> System<'a> for Renderer {
         let m = movit * ortho * scale;
 
         unsafe {
-            gl.clear(glow::COLOR_BUFFER_BIT);
             gl.viewport(0, 0, w as _, h as _);
             gl.scissor(0, 0, w as _, h as _);
 
@@ -334,6 +343,7 @@ impl<'a> System<'a> for Renderer {
             self.program.set_uniform(&gl, "transform", m);
             self.texture.bind(&gl);
             gl.bind_vertex_array(self.vertex_array);
+
             gl.draw_arrays(
                 glow::TRIANGLES,
                 0,
@@ -342,6 +352,28 @@ impl<'a> System<'a> for Renderer {
 
             // gl.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
             gl.bind_vertex_array(None);
+        }
+
+        let now = Instant::now();
+        let duration = now.duration_since(frame_start);
+        self.frame_duration.push(duration);
+
+        if self.frame % 100 == 0 {
+            let n: u32 = self.frame_duration.len().try_into().unwrap();
+            let avg_duration = self
+                .frame_duration
+                .iter()
+                .fold(Duration::new(0, 0), |a, b| a + *b)
+                / n;
+
+            self.frame_duration.clear();
+
+            println!(
+                "draw {:6} ({:6} -- {:>16})",
+                self.frame,
+                "",
+                &format!("{}", humantime::format_duration(avg_duration)),
+            );
         }
 
         self.frame += 1;

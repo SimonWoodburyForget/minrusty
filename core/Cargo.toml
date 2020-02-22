@@ -27,7 +27,8 @@ vek = "0.9"
 image = "0.22"
 shrev = "1.1"
 rand = "0.7"
-
+humantime = "2.0"
+tinyvec = "0.3"
 
 [dependencies.specs]
 version = "0.16"
