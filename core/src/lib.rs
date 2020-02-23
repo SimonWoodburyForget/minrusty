@@ -7,12 +7,12 @@ mod components;
 mod distribution;
 mod input;
 mod loader;
+mod map;
 mod physics;
 mod player;
 mod render;
 mod state;
 mod units;
-pub mod volume;
 mod window;
 
 pub use error::Error;
