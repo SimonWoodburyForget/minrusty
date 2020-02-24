@@ -2,8 +2,8 @@ use crate::components::*;
 use crate::distribution::DistSystem;
 use crate::input::*;
 use crate::loader::*;
+use crate::map::MappingSystem;
 use crate::physics::*;
-use crate::player::*;
 
 use instant;
 use specs::prelude::*;
@@ -38,10 +38,10 @@ impl GameState {
         world.insert(DeltaTime::default());
 
         let mut dispatcher = DispatcherBuilder::new()
+            .with(MappingSystem::default(), "mapping-system", &[])
             .with(AssetSystem::default(), "asset-system", &[])
-            .with(InputSystem(None), "input-system", &[])
-            .with(PlayerSystem, "player-system", &["input-system"])
-            .with(PhysicSystem, "physic-system", &["player-system"])
+            .with(InputSystem::default(), "input-system", &[])
+            .with(PhysicSystem, "physic-system", &["input-system"])
             .with(DistSystem::default(), "distribution-system", &[])
             .with_thread_local(renderer)
             .build();
@@ -54,13 +54,12 @@ impl GameState {
         }
     }
 
-    pub fn create_block(&mut self, x: usize, y: usize, name: &str) {
+    pub fn create_block(&mut self, x: u32, y: u32, name: &str) {
         self.ecs
             .create_entity()
             .with(Name(name.into()))
             .with(Coordinate(Vec2::new(x, y)))
             .with(TextureIndex(None))
-            .with(Conveyor::default())
             .build();
     }
 

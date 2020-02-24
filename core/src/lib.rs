@@ -9,7 +9,6 @@ mod input;
 mod loader;
 mod map;
 mod physics;
-mod player;
 mod render;
 mod state;
 mod units;
@@ -21,6 +20,8 @@ use window::Window;
 use shrev::*;
 use specs::prelude::*;
 use std::time::Duration;
+use vek::*;
+use winit::dpi::PhysicalPosition;
 
 #[cfg(feature = "web")]
 mod wasm {
@@ -42,6 +43,9 @@ pub fn log(x: &str) {
 
 #[derive(Default)]
 pub struct ScreenSize(pub (u32, u32));
+
+#[derive(Default)]
+pub struct CursorInput(pub Vec2<i32>);
 
 pub fn main() {
     let mut clock = clock::Clock::new();
@@ -79,8 +83,16 @@ pub fn main() {
 
                 WindowEvent::KeyboardInput { input, .. } => {
                     game.ecs
-                        .write_resource::<EventChannel<KeyboardInput>>()
-                        .single_write(input);
+                        .write_resource::<EventChannel<input::Event>>()
+                        .single_write(input.into());
+                }
+
+                WindowEvent::CursorMoved { position, .. } => {
+                    let PhysicalPosition { x, y } = position;
+                    let cursor = CursorInput(Vec2::new(x, y));
+                    game.ecs
+                        .write_resource::<EventChannel<input::Event>>()
+                        .single_write(cursor.into());
                 }
 
                 _ => {}

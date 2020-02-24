@@ -2,8 +2,11 @@ use specs::prelude::*;
 use specs::Component;
 use vek::*;
 
-#[derive(Component, Clone, Debug)]
+#[derive(Default)]
 pub struct Tile;
+impl Component for Tile {
+    type Storage = FlaggedStorage<Self, NullStorage<Self>>;
+}
 
 #[derive(Component, Clone, Debug)]
 pub struct Camera;
@@ -26,7 +29,7 @@ pub struct Position(pub Vec3<f32>);
 /// Position in tile space. Tile are 1 by 1 in size, so this component
 /// can't represent half a tile.
 #[derive(Component, Clone, Debug)]
-pub struct Coordinate(pub Vec2<usize>);
+pub struct Coordinate(pub Vec2<u32>);
 
 /// Size of a tile.
 #[derive(Component, Clone, Debug)]
@@ -50,13 +53,27 @@ pub struct RenderId(pub Option<usize>);
 #[derive(Component, Clone, Copy, Debug)]
 pub struct TextureIndex(pub Option<usize>);
 
-#[derive(Default)]
-pub struct Conveyor;
-impl Component for Conveyor {
-    type Storage = FlaggedStorage<Self, VecStorage<Self>>;
+#[derive(Component, Clone, Copy)]
+pub enum Item {
+    Copper,
+    Carbon,
+    // ...
 }
 
-pub struct ItemDestination(pub Vec2<u32>);
-impl Component for ItemDestination {
+pub struct Conveyor {
+    items: [Option<Item>; 4],
+    destination: Vec2<u32>,
+}
+
+impl Conveyor {
+    fn new(destination: Vec2<u32>) -> Self {
+        Self {
+            items: Default::default(),
+            destination,
+        }
+    }
+}
+
+impl Component for Conveyor {
     type Storage = VecStorage<Self>;
 }
