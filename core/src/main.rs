@@ -1,5 +1,5 @@
 use minrusty;
 
 fn main() {
-    minrusty::main();
+    minrusty::game::play();
 }

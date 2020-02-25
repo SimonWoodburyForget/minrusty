@@ -61,7 +61,7 @@ impl GameState {
             .build();
     }
 
-    pub fn update(&mut self) {
+    pub fn tick(&mut self) {
         let now = instant::Instant::now();
         let duration = now.duration_since(self.last);
         self.last = now;
