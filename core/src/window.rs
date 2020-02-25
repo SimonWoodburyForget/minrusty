@@ -1,5 +1,6 @@
 use crate::render::Renderer;
 use crate::Error;
+use std::convert::TryInto;
 
 #[cfg(feature = "web")]
 use wasm_bindgen::JsCast;
@@ -92,11 +93,11 @@ impl Window {
         }
     }
 
-    pub fn dimensions(&self) -> (u32, u32) {
+    pub fn dimensions(&self) -> (i32, i32) {
         #[cfg(feature = "web")]
         {
             let canvas = self.window.canvas();
-            let (w, h) = (canvas.client_width() as u32, canvas.client_height() as u32);
+            let (w, h) = (canvas.client_width(), canvas.client_height());
 
             // NOTE: canvas doesn't expect to be resized by the user, but we use CSS to
             // resize it, which doesn't fire any events, so this is required to maintain.
@@ -110,7 +111,7 @@ impl Window {
         {
             let winit::dpi::PhysicalSize { width, height } =
                 self.windowed_context.window().inner_size();
-            (width, height)
+            (width.try_into().unwrap(), height.try_into().unwrap())
         }
     }
 

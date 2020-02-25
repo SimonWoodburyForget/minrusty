@@ -4,7 +4,6 @@ mod main_web;
 // mod platform;
 mod clock;
 mod components;
-mod distribution;
 mod input;
 mod loader;
 mod map;
@@ -42,7 +41,7 @@ pub fn log(x: &str) {
 }
 
 #[derive(Default)]
-pub struct ScreenSize(pub (u32, u32));
+pub struct ScreenSize(pub (i32, i32));
 
 #[derive(Default)]
 pub struct CursorInput(pub Vec2<i32>);

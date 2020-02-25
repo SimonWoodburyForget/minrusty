@@ -8,8 +8,8 @@ pub struct Map<C> {
     /// Stores the kind of tile at a coordinate.
     tiles: Vec<C>,
 
-    width: u32,
-    height: u32,
+    width: i32,
+    height: i32,
 }
 
 impl<C: Default> Default for Map<C> {
@@ -18,21 +18,21 @@ impl<C: Default> Default for Map<C> {
     }
 }
 
-impl<C> Index<Vec2<u32>> for Map<C> {
+impl<C> Index<Vec2<i32>> for Map<C> {
     type Output = C;
-    fn index(&self, position: Vec2<u32>) -> &C {
+    fn index(&self, position: Vec2<i32>) -> &C {
         &self.tiles[((position.y * self.width) + position.x) as usize]
     }
 }
 
-impl<C> IndexMut<Vec2<u32>> for Map<C> {
-    fn index_mut(&mut self, position: Vec2<u32>) -> &mut C {
+impl<C> IndexMut<Vec2<i32>> for Map<C> {
+    fn index_mut(&mut self, position: Vec2<i32>) -> &mut C {
         &mut self.tiles[((position.y * self.width) + position.x) as usize]
     }
 }
 
 impl<C: Default> Map<C> {
-    fn with_dimentions(dimentions: Vec2<u32>) -> Self {
+    fn with_dimentions(dimentions: Vec2<i32>) -> Self {
         let [width, height] = dimentions.into_array();
         Self {
             width,

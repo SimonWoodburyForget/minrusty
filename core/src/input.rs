@@ -12,7 +12,7 @@ pub struct InputState {
     pub down: bool,
     pub left: bool,
     pub right: bool,
-    pub cursor: Vec2<u32>,
+    pub cursor: Vec2<i32>,
 }
 
 impl InputState {
@@ -42,7 +42,7 @@ pub enum Event {
     Down(bool),
     Left(bool),
     Right(bool),
-    Cursor(Vec2<u32>),
+    Cursor(Vec2<i32>),
     Unknown,
 }
 
@@ -112,7 +112,6 @@ impl<'a> System<'a> for InputSystem {
 
     fn setup(&mut self, world: &mut World) {
         Self::SystemData::setup(world);
-
         self.reader_id = Some(world.fetch_mut::<EventChannel<Event>>().register_reader());
     }
 }

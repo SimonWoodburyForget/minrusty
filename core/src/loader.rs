@@ -53,11 +53,11 @@ impl Loader {
     }
 }
 
-static ASSETS: &[(&str, &[u8])] = &[
-    ("a", include_bytes!("../../assets/a.png")),
-    ("b", include_bytes!("../../assets/b.png")),
-    ("c", include_bytes!("../../assets/c.png")),
-    ("d", include_bytes!("../../assets/d.png")),
+static PNG_ASSETS: &[(&str, &[u8])] = &[
+    ("a", include_bytes!("../assets/a.png")),
+    ("b", include_bytes!("../assets/b.png")),
+    ("c", include_bytes!("../assets/c.png")),
+    ("d", include_bytes!("../assets/d.png")),
 ];
 
 /// System for bundling assets and entities together.
@@ -81,7 +81,7 @@ impl<'a> System<'a> for AssetSystem {
         Self::SystemData::setup(world);
         self.reader_id = Some(world.write_storage::<Name>().register_reader());
         let mut loader = world.fetch_mut::<Loader>();
-        for (name, data) in ASSETS.iter() {
+        for (name, data) in PNG_ASSETS.iter() {
             loader.push_image(name.to_string(), data);
         }
     }

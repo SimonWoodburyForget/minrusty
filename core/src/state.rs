@@ -1,5 +1,4 @@
 use crate::components::*;
-use crate::distribution::DistSystem;
 use crate::input::*;
 use crate::loader::*;
 use crate::map::MappingSystem;
@@ -42,7 +41,6 @@ impl GameState {
             .with(AssetSystem::default(), "asset-system", &[])
             .with(InputSystem::default(), "input-system", &[])
             .with(PhysicSystem, "physic-system", &["input-system"])
-            .with(DistSystem::default(), "distribution-system", &[])
             .with_thread_local(renderer)
             .build();
         dispatcher.setup(&mut world);
@@ -54,7 +52,7 @@ impl GameState {
         }
     }
 
-    pub fn create_block(&mut self, x: u32, y: u32, name: &str) {
+    pub fn create_block(&mut self, x: i32, y: i32, name: &str) {
         self.ecs
             .create_entity()
             .with(Name(name.into()))

@@ -29,7 +29,7 @@ pub struct Position(pub Vec3<f32>);
 /// Position in tile space. Tile are 1 by 1 in size, so this component
 /// can't represent half a tile.
 #[derive(Component, Clone, Debug)]
-pub struct Coordinate(pub Vec2<u32>);
+pub struct Coordinate(pub Vec2<i32>);
 
 /// Size of a tile.
 #[derive(Component, Clone, Debug)]
@@ -62,11 +62,11 @@ pub enum Item {
 
 pub struct Conveyor {
     items: [Option<Item>; 4],
-    destination: Vec2<u32>,
+    destination: Vec2<i32>,
 }
 
 impl Conveyor {
-    fn new(destination: Vec2<u32>) -> Self {
+    fn new(destination: Vec2<i32>) -> Self {
         Self {
             items: Default::default(),
             destination,
