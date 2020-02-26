@@ -19,7 +19,7 @@ pub use types::*;
 pub use uniform::*;
 
 use crate::components::*;
-use crate::game::{CursorState, ScreenSize};
+use crate::game::{CursorState, ScreenSize, UniversePosition};
 use crate::loader::Loader;
 use crate::state::GameStart;
 use memory::Pod;
@@ -260,6 +260,7 @@ impl<'a> System<'a> for Renderer {
         Read<'a, GameStart>,
         Read<'a, ScreenSize>,
         Read<'a, CursorState>,
+        Read<'a, UniversePosition>,
         ReadStorage<'a, Position>,
         ReadStorage<'a, Coordinate>,
         ReadStorage<'a, TextureIndex>,
@@ -277,12 +278,13 @@ impl<'a> System<'a> for Renderer {
         &mut self,
         (
             entities,
-            start,
+            _start,
             screen_size,
-            cursor_state,
+            _cursor_state,
+            universe_position,
             _positions,
             coordinates,
-            textures
+            textures,
         ): Self::SystemData,
     ) {
         let Self {
@@ -314,7 +316,7 @@ impl<'a> System<'a> for Renderer {
             vertex_buffer.update(&gl, 0, &tile_mesh.data)
         };
 
-        let seconds = crate::units::Seconds::<f32>::from(start.0.elapsed());
+        // let seconds = crate::units::Seconds::<f32>::from(start.0.elapsed());
 
         let [w, h] = screen_size.0.into_array();
         let (w, h) = (w as f32, h as f32);
@@ -332,15 +334,17 @@ impl<'a> System<'a> for Renderer {
 
         let ortho = Mat4::frustum_rh_no(frustum);
 
-        let (x, y) = {
-            let [a, b] = cursor_state.0.into_array();
-            let (a, b) = (a as f32, b as f32);
-            let v = Vec2::new(a, b) / Vec2::new(w, h);
-            (-1.0 + 0.3 * v.x, -1.0 + 0.3 * v.y)
-        };
+        // let (x, y) = {
+        //     let [a, b] = cursor_state.0.into_array();
+        //     let (a, b) = (a as f32, b as f32);
+        //     let v = Vec2::new(a, b) / Vec2::new(w, h);
+        //     (-1.0 + 0.3 * v.x, -1.0 + 0.3 * v.y)
+        // };
 
         // let x = -1.0 + 0.3 * seconds.0.sin();
         // let y = -1.0 + 0.3 * seconds.0.cos();
+
+        let [x, y] = universe_position.0.into_array();
 
         #[rustfmt::skip]
         let movit = Mat4::new(

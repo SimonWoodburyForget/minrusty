@@ -2,6 +2,7 @@ use crate::window::Window;
 use crate::*;
 use shrev::*;
 use specs::prelude::*;
+use state::GameStart;
 use std::time::Duration;
 use vek::*;
 use winit::dpi::PhysicalPosition;
@@ -52,6 +53,10 @@ pub struct ScreenSize(pub Vec2<i32>);
 
 #[derive(Default, Clone, Copy)]
 pub struct CursorState(pub Vec2<i32>);
+
+/// The position of the universe.
+#[derive(Default)]
+pub struct UniversePosition(pub Vec2<f32>);
 
 pub fn play() {
     let mut clock = clock::Clock::new();
@@ -112,9 +117,14 @@ pub fn play() {
             },
 
             Event::RedrawRequested(_) => {
+                // let x = -1.0 + 0.3 * seconds.0.sin();
+                // let y = -1.0 + 0.3 * seconds.0.cos();
+
                 *game.ecs.write_resource::<CursorState>() = cursor_state;
                 *game.ecs.write_resource::<ScreenSize>() = ScreenSize(window.dimensions().into());
-                clock.tick(Duration::from_millis(16));
+                *game.ecs.write_resource::<UniversePosition>() =
+                    UniversePosition(Vec2::new(0.1, -0.3));
+
                 game.tick();
                 window.on_event(window::Event::Draw);
             }
