@@ -1,5 +1,4 @@
 use crate::components::*;
-use crate::input::*;
 use crate::loader::*;
 use crate::map::MappingSystem;
 use crate::physics::*;
@@ -39,8 +38,7 @@ impl GameState {
         let mut dispatcher = DispatcherBuilder::new()
             .with(MappingSystem::default(), "mapping-system", &[])
             .with(AssetSystem::default(), "asset-system", &[])
-            .with(InputSystem::default(), "input-system", &[])
-            .with(PhysicSystem, "physic-system", &["input-system"])
+            .with(PhysicSystem, "physic-system", &[])
             .with_thread_local(renderer)
             .build();
         dispatcher.setup(&mut world);

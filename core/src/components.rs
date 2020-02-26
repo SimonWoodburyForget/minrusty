@@ -77,3 +77,12 @@ impl Conveyor {
 impl Component for Conveyor {
     type Storage = VecStorage<Self>;
 }
+
+/// Component for controlling entities.
+pub struct Controller {
+    pub move_direction: Vec2<i32>,
+}
+
+impl Component for Controller {
+    type Storage = VecStorage<Self>;
+}

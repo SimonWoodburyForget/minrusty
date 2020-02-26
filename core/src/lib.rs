@@ -3,7 +3,6 @@ mod error;
 mod clock;
 mod components;
 pub mod game;
-mod input;
 mod loader;
 mod map;
 mod physics;

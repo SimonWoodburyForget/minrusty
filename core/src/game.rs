@@ -25,10 +25,33 @@ pub fn log(x: &str) {
 }
 
 #[derive(Default)]
+struct KeyState {
+    up: bool,
+    down: bool,
+    left: bool,
+    right: bool,
+}
+
+impl From<KeyState> for Vec2<f32> {
+    fn from(state: KeyState) -> Self {
+        let to_float = |x| if x { 1.0 } else { 0.0 };
+
+        #[rustfmt::skip]
+        let KeyState { up, down, left, right, .. } = state;
+        Vec2::new(
+            to_float(right) - to_float(left),
+            to_float(up) - to_float(down),
+        )
+        .try_normalized()
+        .unwrap_or(Vec2::zero())
+    }
+}
+
+#[derive(Default)]
 pub struct ScreenSize(pub (i32, i32));
 
 #[derive(Default)]
-pub struct CursorInput(pub Vec2<i32>);
+struct CursorState(pub Vec2<i32>);
 
 pub fn play() {
     let mut clock = clock::Clock::new();
@@ -45,6 +68,9 @@ pub fn play() {
 
     game.ecs.insert(ScreenSize(window.dimensions()));
 
+    let mut key_state = KeyState::default();
+    let mut cursor_state = CursorState::default();
+
     event_loop.run(move |event, _, control_flow| {
         use winit::event_loop::ControlFlow;
         *control_flow = ControlFlow::Poll;
@@ -54,8 +80,7 @@ pub fn play() {
             *ss = ScreenSize(window.dimensions());
         }
 
-        use winit::event::{Event, KeyboardInput, StartCause, WindowEvent};
-
+        use winit::event::{Event, StartCause, WindowEvent};
         match event {
             Event::NewEvents(StartCause::Init) => {}
 
@@ -65,17 +90,27 @@ pub fn play() {
                 WindowEvent::Resized(ref _size) => {}
 
                 WindowEvent::KeyboardInput { input, .. } => {
-                    game.ecs
-                        .write_resource::<EventChannel<input::Event>>()
-                        .single_write(input.into());
+                    use winit::event::{ElementState, KeyboardInput, VirtualKeyCode};
+                    let KeyboardInput {
+                        virtual_keycode,
+                        state,
+                        ..
+                    } = input;
+                    if let Some(vkc) = virtual_keycode {
+                        let held = ElementState::Pressed == state;
+                        match vkc {
+                            VirtualKeyCode::Up => key_state.up = held,
+                            VirtualKeyCode::Down => key_state.down = held,
+                            VirtualKeyCode::Left => key_state.left = held,
+                            VirtualKeyCode::Right => key_state.right = held,
+                            _ => {}
+                        };
+                    };
                 }
 
                 WindowEvent::CursorMoved { position, .. } => {
                     let PhysicalPosition { x, y } = position;
-                    let cursor = CursorInput(Vec2::new(x, y));
-                    game.ecs
-                        .write_resource::<EventChannel<input::Event>>()
-                        .single_write(cursor.into());
+                    cursor_state.0 = Vec2::new(x, y);
                 }
 
                 _ => {}
