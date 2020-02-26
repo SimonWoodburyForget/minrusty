@@ -48,10 +48,10 @@ impl From<KeyState> for Vec2<f32> {
 }
 
 #[derive(Default)]
-pub struct ScreenSize(pub (i32, i32));
+pub struct ScreenSize(pub Vec2<i32>);
 
-#[derive(Default)]
-struct CursorState(pub Vec2<i32>);
+#[derive(Default, Clone, Copy)]
+pub struct CursorState(pub Vec2<i32>);
 
 pub fn play() {
     let mut clock = clock::Clock::new();
@@ -66,7 +66,7 @@ pub fn play() {
     game.create_block(0, 0, "d");
     game.create_block(1, 2, "d");
 
-    game.ecs.insert(ScreenSize(window.dimensions()));
+    game.ecs.insert(ScreenSize(window.dimensions().into()));
 
     let mut key_state = KeyState::default();
     let mut cursor_state = CursorState::default();
@@ -74,11 +74,6 @@ pub fn play() {
     event_loop.run(move |event, _, control_flow| {
         use winit::event_loop::ControlFlow;
         *control_flow = ControlFlow::Poll;
-
-        {
-            let mut ss = game.ecs.write_resource::<ScreenSize>();
-            *ss = ScreenSize(window.dimensions());
-        }
 
         use winit::event::{Event, StartCause, WindowEvent};
         match event {
@@ -117,6 +112,8 @@ pub fn play() {
             },
 
             Event::RedrawRequested(_) => {
+                *game.ecs.write_resource::<CursorState>() = cursor_state;
+                *game.ecs.write_resource::<ScreenSize>() = ScreenSize(window.dimensions().into());
                 clock.tick(Duration::from_millis(16));
                 game.tick();
                 window.on_event(window::Event::Draw);

@@ -19,9 +19,9 @@ pub use types::*;
 pub use uniform::*;
 
 use crate::components::*;
-use crate::loader::*;
+use crate::game::{CursorState, ScreenSize};
+use crate::loader::Loader;
 use crate::state::GameStart;
-use crate::ScreenSize;
 use memory::Pod;
 
 use glow::*;
@@ -259,12 +259,14 @@ impl<'a> System<'a> for Renderer {
         Entities<'a>,
         Read<'a, GameStart>,
         Read<'a, ScreenSize>,
+        Read<'a, CursorState>,
         ReadStorage<'a, Position>,
         ReadStorage<'a, Coordinate>,
         ReadStorage<'a, TextureIndex>,
     );
 
     fn setup(&mut self, world: &mut World) {
+        Self::SystemData::setup(world);
         let loader = world.fetch::<Loader>();
         for (e, image) in loader.iter_images() {
             self.texture.update_image(&self.gl, e as u32, image);
@@ -273,7 +275,15 @@ impl<'a> System<'a> for Renderer {
 
     fn run(
         &mut self,
-        (entities, start, screen_size, _positions, coordinates, textures): Self::SystemData,
+        (
+            entities,
+            start,
+            screen_size,
+            cursor_state,
+            _positions,
+            coordinates,
+            textures
+        ): Self::SystemData,
     ) {
         let Self {
             gl,
@@ -306,13 +316,13 @@ impl<'a> System<'a> for Renderer {
 
         let seconds = crate::units::Seconds::<f32>::from(start.0.elapsed());
 
-        let ScreenSize((w, h)) = *screen_size;
+        let [w, h] = screen_size.0.into_array();
+        let (w, h) = (w as f32, h as f32);
 
         let scale: Mat4<f32> = Mat4::scaling_3d(Vec3::new(300., 300., 1.0));
 
         #[rustfmt::skip]
         let frustum = {
-            let (w, h) = (w as f32, h as f32);
             FrustumPlanes::<f32> {
                 left: 0.0, right: w,
                 bottom: 0.0, top: h,
@@ -322,8 +332,15 @@ impl<'a> System<'a> for Renderer {
 
         let ortho = Mat4::frustum_rh_no(frustum);
 
-        let x = -1.0 + 0.3 * seconds.0.sin();
-        let y = -1.0 + 0.3 * seconds.0.cos();
+        let (x, y) = {
+            let [a, b] = cursor_state.0.into_array();
+            let (a, b) = (a as f32, b as f32);
+            let v = Vec2::new(a, b) / Vec2::new(w, h);
+            (-1.0 + 0.3 * v.x, -1.0 + 0.3 * v.y)
+        };
+
+        // let x = -1.0 + 0.3 * seconds.0.sin();
+        // let y = -1.0 + 0.3 * seconds.0.cos();
 
         #[rustfmt::skip]
         let movit = Mat4::new(
