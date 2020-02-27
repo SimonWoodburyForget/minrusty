@@ -59,7 +59,7 @@ pub mod resources {
 
     /// As the player moves through the universe, the position of
     /// the universe changes, not the player itself.
-    #[derive(Default)]
+    #[derive(Default, Clone, Copy, Debug)]
     pub struct UniversePosition(pub Vec2<f32>);
 }
 
@@ -80,6 +80,7 @@ pub fn play() {
 
     let mut key_state = KeyState::default();
     let mut cursor_state = CursorState::default();
+    let mut universe_position = UniversePosition::default();
 
     event_loop.run(move |event, _, control_flow| {
         use winit::event_loop::ControlFlow;
@@ -108,6 +109,10 @@ pub fn play() {
                             VirtualKeyCode::Down => key_state.down = held,
                             VirtualKeyCode::Left => key_state.left = held,
                             VirtualKeyCode::Right => key_state.right = held,
+                            VirtualKeyCode::Space => {
+                                universe_position.0.x += 0.1;
+                                println!("{:?}", universe_position);
+                            }
                             _ => {}
                         };
                     };
@@ -127,8 +132,7 @@ pub fn play() {
 
                 *game.ecs.write_resource::<CursorState>() = cursor_state;
                 *game.ecs.write_resource::<ScreenSize>() = ScreenSize(window.dimensions().into());
-                *game.ecs.write_resource::<UniversePosition>() =
-                    UniversePosition(Vec2::new(0.1, -0.3));
+                *game.ecs.write_resource::<UniversePosition>() = universe_position;
 
                 game.tick();
                 window.on_event(window::Event::Draw);

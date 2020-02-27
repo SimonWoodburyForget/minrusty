@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate memoffset;
+
 mod error;
 // mod platform;
 mod builder;

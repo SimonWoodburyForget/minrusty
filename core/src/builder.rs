@@ -10,7 +10,7 @@ pub struct BuilderSystem;
 
 impl<'a> System<'a> for BuilderSystem {
     type SystemData = (
-        // Read<'a, T>
+        // ..
         Entities<'a>,
         Read<'a, CursorState>,
         Read<'a, ScreenSize>,
@@ -23,14 +23,17 @@ impl<'a> System<'a> for BuilderSystem {
         &mut self,
         (
             _entities,
-            _cursor_state,
-            _screen_size,
+            cursor_state,
+            screen_size,
             _universe_position,
             map,
             mut colors,
             // ..
         ): Self::SystemData,
     ) {
+        let [h, w] = screen_size.0.into_array();
+        let hw = Vec2::new(h as f32, w as f32);
+
         if let Some(entity) = map[Vec2::new(1, 1)].tile {
             if let Some(ref mut color) = colors.get_mut(entity) {
                 color.0 = Rgba::new(0.0, 0.0, 0.0, 0.0);

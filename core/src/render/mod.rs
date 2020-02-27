@@ -38,14 +38,6 @@ pub enum DataType {
 }
 
 impl DataType {
-    fn size(&self) -> i32 {
-        match self {
-            DataType::Float => 4,
-            DataType::Int => 4,
-            DataType::Uint => 4,
-        }
-    }
-
     fn data_type(&self) -> u32 {
         match self {
             DataType::Float => glow::FLOAT,
@@ -62,25 +54,25 @@ impl DataType {
 pub struct VertexAttribute {
     location: u32,
     size: i32,
-    size_type: i32,
     data_type: u32,
     norm: bool,
+    offset: usize,
 }
 
 impl VertexAttribute {
-    fn new(location: u32, size: i32, dtype: DataType) -> Self {
+    fn new(location: u32, size: i32, dtype: DataType, offset: usize) -> Self {
         Self {
             location,
             size,
-            size_type: dtype.size(),
             data_type: dtype.data_type(),
             norm: dtype.normalize(),
+            offset,
         }
     }
 }
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
+#[repr(C, packed)]
 pub struct Vertex {
     /// Position of the vertex.
     pos: [f32; 2],
@@ -97,10 +89,13 @@ pub struct Vertex {
 
 unsafe impl Pod for Vertex {}
 
-const VERT_POS: u32 = 0;
-const TEXT_POS: u32 = 1;
-const TEXT_IDX: u32 = 2;
-const VERT_COL: u32 = 3;
+/// Constant vertex attribute locations used across shaders.
+mod loc {
+    pub const VERT_POS: u32 = 0;
+    pub const TEXT_POS: u32 = 1;
+    pub const TEXT_IDX: u32 = 2;
+    pub const VERT_COL: u32 = 3;
+}
 
 impl Vertex {
     fn stride_size() -> usize {
@@ -109,11 +104,11 @@ impl Vertex {
 
     fn vertex_attributes() -> [VertexAttribute; 4] {
         [
-            VertexAttribute::new(VERT_POS, 2, DataType::Float),
-            VertexAttribute::new(TEXT_POS, 2, DataType::Float),
+            VertexAttribute::new(loc::VERT_POS, 2, DataType::Float, offset_of!(Vertex, pos)),
+            VertexAttribute::new(loc::TEXT_POS, 2, DataType::Float, offset_of!(Vertex, tex)),
             // FIXME: `Float` works but `Uint` doesn't
-            VertexAttribute::new(TEXT_IDX, 1, DataType::Float),
-            VertexAttribute::new(VERT_COL, 4, DataType::Float),
+            VertexAttribute::new(loc::TEXT_IDX, 1, DataType::Float, offset_of!(Vertex, idx)),
+            VertexAttribute::new(loc::VERT_COL, 4, DataType::Float, offset_of!(Vertex, color)),
         ]
     }
 }
@@ -201,9 +196,9 @@ impl Renderer {
             include_str!("shaders/vss.glsl"),
             include_str!("shaders/fss.glsl"),
             &[
-                (VERT_POS, "vert_pos"),
-                (TEXT_POS, "text_pos"),
-                (TEXT_IDX, "text_idx"),
+                (loc::VERT_POS, "vert_pos"),
+                (loc::TEXT_POS, "text_pos"),
+                (loc::TEXT_IDX, "text_idx"),
             ],
         )?;
 
@@ -228,7 +223,6 @@ impl Renderer {
             gl.bind_vertex_array(vertex_array);
 
             vertex_buffer.bind(&gl);
-            let mut offset = 0;
             for attr in Vertex::vertex_attributes().iter() {
                 gl.vertex_attrib_pointer_f32(
                     attr.location,
@@ -236,10 +230,9 @@ impl Renderer {
                     attr.data_type,
                     attr.norm,
                     Vertex::stride_size() as _,
-                    offset,
+                    attr.offset as _,
                 );
                 gl.enable_vertex_attrib_array(attr.location);
-                offset += attr.size * attr.size_type;
             }
         }
 
@@ -304,7 +297,7 @@ impl<'a> System<'a> for Renderer {
         } = self;
 
         unsafe {
-            // here to avoid timing vsync blocking time
+            // expected blocking operation for vsync
             gl.clear(glow::COLOR_BUFFER_BIT);
         }
 
@@ -405,6 +398,8 @@ impl<'a> System<'a> for Renderer {
                 "",
                 &format!("{}", humantime::format_duration(avg_duration)),
             );
+
+            println!("posi {:6} ()", m * Vec4::new(0.5, 0.5, 0.5, 1.0));
         }
 
         self.frame += 1;
