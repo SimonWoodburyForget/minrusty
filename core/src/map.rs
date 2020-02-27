@@ -44,7 +44,7 @@ impl<C: Default> Map<C> {
 
 #[derive(Default)]
 pub struct Cell {
-    tile: Option<Entity>,
+    pub tile: Option<Entity>,
 }
 
 #[derive(Default)]

@@ -1,3 +1,4 @@
+use crate::builder::BuilderSystem;
 use crate::components::*;
 use crate::loader::*;
 use crate::map::MappingSystem;
@@ -38,6 +39,11 @@ impl GameState {
         let mut dispatcher = DispatcherBuilder::new()
             .with(MappingSystem::default(), "mapping-system", &[])
             .with(AssetSystem::default(), "asset-system", &[])
+            .with(
+                BuilderSystem::default(),
+                "builder-system",
+                &["mapping-system"],
+            )
             .with(PhysicSystem, "physic-system", &[])
             .with_thread_local(renderer)
             .build();
@@ -57,6 +63,7 @@ impl GameState {
             .with(Coordinate(Vec2::new(x, y)))
             .with(TextureIndex(None))
             .with(Color(Rgba::new(red, 0.5, 0.5, 0.5)))
+            .with(Tile)
             .build();
     }
 
