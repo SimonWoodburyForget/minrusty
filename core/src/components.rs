@@ -36,7 +36,7 @@ pub struct Coordinate(pub Vec2<i32>);
 pub struct Size(pub f32);
 
 #[derive(Component, Clone, Debug)]
-pub struct Color(pub Vec4<f32>);
+pub struct Color(pub Rgba<f32>);
 
 /// An internal name used to bundle assets together.
 pub struct Name(pub String);
@@ -52,31 +52,6 @@ pub struct RenderId(pub Option<usize>);
 
 #[derive(Component, Clone, Copy, Debug)]
 pub struct TextureIndex(pub Option<usize>);
-
-#[derive(Component, Clone, Copy)]
-pub enum Item {
-    Copper,
-    Carbon,
-    // ...
-}
-
-pub struct Conveyor {
-    items: [Option<Item>; 4],
-    destination: Vec2<i32>,
-}
-
-impl Conveyor {
-    fn new(destination: Vec2<i32>) -> Self {
-        Self {
-            items: Default::default(),
-            destination,
-        }
-    }
-}
-
-impl Component for Conveyor {
-    type Storage = VecStorage<Self>;
-}
 
 /// Component for controlling entities.
 pub struct Controller {

@@ -1,5 +1,6 @@
 mod error;
 // mod platform;
+mod builder;
 mod clock;
 mod components;
 pub mod game;

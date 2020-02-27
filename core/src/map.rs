@@ -9,7 +9,7 @@ pub struct Map<C> {
     tiles: Vec<C>,
 
     width: i32,
-    height: i32,
+    pub height: i32,
 }
 
 impl<C: Default> Default for Map<C> {

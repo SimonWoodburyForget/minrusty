@@ -2,8 +2,10 @@
 in vec2 vert_pos;
 in vec2 text_pos;
 in uint text_idx;
+in vec4 vert_col;
 
 out vec2 f_text_pos;
+out vec4 frag_col;
 flat out uint idx;
 
 uniform mat4 transform;
@@ -11,6 +13,7 @@ uniform mat4 transform;
 void main() {
   f_text_pos = text_pos;
   idx = text_idx;
+  frag_col = vert_col;
   
   vec4 pos = vec4(vert_pos, 1.0, 1.0);
   

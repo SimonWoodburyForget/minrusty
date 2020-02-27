@@ -90,6 +90,9 @@ pub struct Vertex {
 
     /// Texture array index.
     idx: u32,
+
+    /// Color of this vertex.
+    color: [f32; 4],
 }
 
 unsafe impl Pod for Vertex {}
@@ -97,18 +100,20 @@ unsafe impl Pod for Vertex {}
 const VERT_POS: u32 = 0;
 const TEXT_POS: u32 = 1;
 const TEXT_IDX: u32 = 2;
+const VERT_COL: u32 = 3;
 
 impl Vertex {
     fn stride_size() -> usize {
         std::mem::size_of::<Self>()
     }
 
-    fn vertex_attributes() -> [VertexAttribute; 3] {
+    fn vertex_attributes() -> [VertexAttribute; 4] {
         [
             VertexAttribute::new(VERT_POS, 2, DataType::Float),
             VertexAttribute::new(TEXT_POS, 2, DataType::Float),
             // FIXME: `Float` works but `Uint` doesn't
             VertexAttribute::new(TEXT_IDX, 1, DataType::Float),
+            VertexAttribute::new(VERT_COL, 4, DataType::Float),
         ]
     }
 }
@@ -134,13 +139,15 @@ impl<P: Pipeline> Quad<P> {
 
 impl Quad<SpritePipeline> {
     #[rustfmt::skip]
-    pub fn rect(x: f32, y: f32, size: f32, t: u32) -> Self {
+    pub fn rect(xy: Vec2<f32>, size: f32, idx: u32, color: Rgba<f32>) -> Self {
+        let [x, y] = xy.into_array();
+        let color = color.into_array();
         let s = size;
         Self::new(
-            Vertex { pos: [ 0.5 + x + s,  0.5 + y + s], tex: [1.0, 1.0], idx: t },
-            Vertex { pos: [ 0.5 + x + s, -0.5 + y    ], tex: [1.0, 0.0], idx: t },
-            Vertex { pos: [-0.5 + x    ,  0.5 + y + s], tex: [0.0, 1.0], idx: t },
-            Vertex { pos: [-0.5 + x    , -0.5 + y    ], tex: [0.0, 0.0], idx: t },
+            Vertex { pos: [ 0.5 + x + s,  0.5 + y + s], tex: [1.0, 1.0], idx, color },
+            Vertex { pos: [ 0.5 + x + s, -0.5 + y    ], tex: [1.0, 0.0], idx, color },
+            Vertex { pos: [-0.5 + x    ,  0.5 + y + s], tex: [0.0, 1.0], idx, color },
+            Vertex { pos: [-0.5 + x    , -0.5 + y    ], tex: [0.0, 0.0], idx, color },
         )
     }
 }
@@ -261,6 +268,7 @@ impl<'a> System<'a> for Renderer {
         Read<'a, ScreenSize>,
         Read<'a, CursorState>,
         Read<'a, UniversePosition>,
+        ReadStorage<'a, Color>,
         ReadStorage<'a, Position>,
         ReadStorage<'a, Coordinate>,
         ReadStorage<'a, TextureIndex>,
@@ -282,6 +290,7 @@ impl<'a> System<'a> for Renderer {
             screen_size,
             _cursor_state,
             universe_position,
+            colors,
             _positions,
             coordinates,
             textures,
@@ -305,10 +314,11 @@ impl<'a> System<'a> for Renderer {
         // TODO: this needs a way to handle changing vertices count.
         // NOTE: this could be done much more efficiently,
         // but we're not rendering thousands of tiles yet.
-        for (_, coord, text) in (&*entities, &coordinates, &textures).join() {
-            let t = text.0.unwrap_or(0);
-            let (x, y) = (coord.0.x, coord.0.y);
-            tile_mesh.push_quad(Quad::rect(x as _, y as _, 0.0, t as _));
+        for (_, coord, text, color) in (&*entities, &coordinates, &textures, &colors).join() {
+            let t = text.0.unwrap_or(0) as _;
+            let (x, y) = (coord.0.x as _, coord.0.y as _);
+            let v = Vec2::new(x, y);
+            tile_mesh.push_quad(Quad::rect(v, 0.0, t, color.0));
         }
 
         unsafe {

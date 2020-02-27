@@ -50,12 +50,13 @@ impl GameState {
         }
     }
 
-    pub fn create_block(&mut self, x: i32, y: i32, name: &str) {
+    pub fn create_block(&mut self, x: i32, y: i32, name: &str, red: f32) {
         self.ecs
             .create_entity()
             .with(Name(name.into()))
             .with(Coordinate(Vec2::new(x, y)))
             .with(TextureIndex(None))
+            .with(Color(Rgba::new(red, 0.5, 0.5, 0.5)))
             .build();
     }
 

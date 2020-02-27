@@ -1,6 +1,5 @@
 use crate::window::Window;
 use crate::*;
-use shrev::*;
 use specs::prelude::*;
 use state::GameStart;
 use std::time::Duration;
@@ -48,15 +47,21 @@ impl From<KeyState> for Vec2<f32> {
     }
 }
 
-#[derive(Default)]
-pub struct ScreenSize(pub Vec2<i32>);
+pub use resources::*;
+pub mod resources {
+    use super::*;
 
-#[derive(Default, Clone, Copy)]
-pub struct CursorState(pub Vec2<i32>);
+    #[derive(Default)]
+    pub struct ScreenSize(pub Vec2<i32>);
 
-/// The position of the universe.
-#[derive(Default)]
-pub struct UniversePosition(pub Vec2<f32>);
+    #[derive(Default, Clone, Copy)]
+    pub struct CursorState(pub Vec2<i32>);
+
+    /// As the player moves through the universe, the position of
+    /// the universe changes, not the player itself.
+    #[derive(Default)]
+    pub struct UniversePosition(pub Vec2<f32>);
+}
 
 pub fn play() {
     let mut clock = clock::Clock::new();
@@ -65,11 +70,11 @@ pub fn play() {
 
     let mut game = state::GameState::new(renderer);
 
-    game.create_block(0, 1, "a");
-    game.create_block(1, 1, "b");
-    game.create_block(1, 0, "c");
-    game.create_block(0, 0, "d");
-    game.create_block(1, 2, "d");
+    game.create_block(0, 1, "a", 0.1);
+    game.create_block(1, 1, "b", 0.2);
+    game.create_block(1, 0, "c", 0.3);
+    game.create_block(0, 0, "d", 0.4);
+    game.create_block(1, 2, "d", 0.5);
 
     game.ecs.insert(ScreenSize(window.dimensions().into()));
 
