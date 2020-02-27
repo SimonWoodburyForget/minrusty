@@ -61,6 +61,9 @@ pub mod resources {
     /// the universe changes, not the player itself.
     #[derive(Default, Clone, Copy, Debug)]
     pub struct UniversePosition(pub Vec2<f32>);
+
+    #[derive(Default)]
+    pub struct Frame(pub u64);
 }
 
 pub fn play() {
@@ -129,10 +132,16 @@ pub fn play() {
             Event::RedrawRequested(_) => {
                 // let x = -1.0 + 0.3 * seconds.0.sin();
                 // let y = -1.0 + 0.3 * seconds.0.cos();
+                let frame = game.ecs.read_resource::<Frame>().0 + 1;
+                if frame % 100 == 0 {
+                    println!("");
+                    println!("frame {}", frame);
+                }
 
                 *game.ecs.write_resource::<CursorState>() = cursor_state;
                 *game.ecs.write_resource::<ScreenSize>() = ScreenSize(window.dimensions().into());
                 *game.ecs.write_resource::<UniversePosition>() = universe_position;
+                *game.ecs.write_resource::<Frame>() = Frame(frame);
 
                 game.tick();
                 window.on_event(window::Event::Draw);

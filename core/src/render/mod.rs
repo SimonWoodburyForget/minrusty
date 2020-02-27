@@ -398,8 +398,6 @@ impl<'a> System<'a> for Renderer {
                 "",
                 &format!("{}", humantime::format_duration(avg_duration)),
             );
-
-            println!("posi {:6} ()", m * Vec4::new(0.5, 0.5, 0.5, 1.0));
         }
 
         self.frame += 1;

@@ -71,11 +71,7 @@ impl GameState {
         let now = instant::Instant::now();
         let duration = now.duration_since(self.last);
         self.last = now;
-        {
-            let mut dt = self.ecs.write_resource::<DeltaTime>();
-            *dt = DeltaTime(duration);
-        }
-
+        *self.ecs.write_resource::<DeltaTime>() = DeltaTime(duration);
         self.dis.dispatch(&self.ecs);
         self.ecs.maintain();
     }
