@@ -171,6 +171,68 @@ impl Pipeline for SpritePipeline {
     type Vertex = Vertex;
 }
 
+struct Scene {
+    screen_size: Vec2<i32>,
+    cursor_state: Vec2<i32>,
+}
+
+impl Scene {
+    fn new(screen_size: Vec2<i32>, cursor_state: Vec2<i32>) -> Self {
+        Scene {
+            screen_size,
+            cursor_state,
+        }
+    }
+
+    fn screen_dimentions(&self) -> [i32; 2] {
+        self.screen_size.into_array()
+    }
+
+    /// normalize cursor coordinates to clip-space (-1 to 1)
+    fn normalize(screen_size: Vec2<f32>, cursor_position: Vec2<f32>) -> Vec2<f32> {
+        ((cursor_position / screen_size) - Vec2::new(0.5, 0.5)) * 2.0
+    }
+
+    /// convert i32 top to buttom coordinates (screen)
+    /// into f32 buttom to top coordinates (opengl)
+    fn convert(mut vector: Vec2<i32>) -> Vec2<f32> {
+        vector.y = -vector.y;
+        vector.numcast().unwrap()
+    }
+
+    fn world_cursor(&self) -> Vec2<f32> {
+        let Self {
+            screen_size,
+            cursor_state,
+        } = self;
+
+        let fscreen = Self::convert(*screen_size);
+        let fcursor = Self::convert(*cursor_state);
+        let ncursor = Self::normalize(fscreen, fcursor);
+        let imatrix = self.transform().inverted();
+        let [x, y, _, _] = (imatrix * Vec4::new(ncursor.x, ncursor.y, 0.0, 1.0)).into_array();
+        Vec2::new(x, y)
+    }
+
+    fn transform(&self) -> Mat4<f32> {
+        let Self { screen_size, .. } = self;
+        let screen_size = Self::convert(*screen_size);
+
+        let scale: Mat4<f32> = Mat4::scaling_3d(Vec3::new(100., 100., 1.0));
+        #[rustfmt::skip]
+        let frustum = {
+            FrustumPlanes::<f32> {
+                left: 0.0, right: screen_size.x,
+                bottom: 0.0, top: screen_size.y,
+                near: -10., far: 10.,
+            }
+        };
+        let ortho = Mat4::orthographic_rh_zo(frustum);
+        let trans: Mat4<f32> = Mat4::translation_2d(Vec2::new(0.5, 1.0));
+        (trans * ortho * scale) // * coordinate
+    }
+}
+
 /// Type which holds onto the OpenGL context, and the various objects that surrounds it.
 pub struct Renderer {
     gl: Context,
@@ -303,42 +365,9 @@ impl<'a> System<'a> for Renderer {
         let frame_start = Instant::now();
         tile_mesh.clear();
 
-        /// normalize cursor coordinates to clip-space (-1 to 1)
-        fn normalize(screen_size: Vec2<f32>, cursor_position: Vec2<f32>) -> Vec2<f32> {
-            ((cursor_position / screen_size) - Vec2::new(0.5, 0.5)) * 2.0
-        }
-
-        /// convert i32 top to buttom coordinates (screen)
-        /// into f32 buttom to top coordinates (opengl)
-        fn convert(mut vector: Vec2<i32>) -> Vec2<f32> {
-            vector.y = -vector.y;
-            vector.numcast().unwrap()
-        }
-
-        let iscreen = screen_size.0;
-        let fscreen = convert(screen_size.0);
-        let fcursor = convert(cursor_state.0);
-        let ncursor = normalize(fscreen, fcursor);
-
-        fn transform(screen_size: Vec2<f32>) -> Mat4<f32> {
-            let scale: Mat4<f32> = Mat4::scaling_3d(Vec3::new(100., 100., 1.0));
-            #[rustfmt::skip]
-            let frustum = {
-                FrustumPlanes::<f32> {
-                    left: 0.0, right: screen_size.x,
-                    bottom: 0.0, top: screen_size.y,
-                    near: -10., far: 10.,
-                }
-            };
-            let ortho = Mat4::orthographic_rh_zo(frustum);
-            let trans: Mat4<f32> = Mat4::translation_2d(Vec2::new(0.5, 1.0));
-            (trans * ortho * scale) // * coordinate
-        }
-
-        let transform_matrix = transform(fscreen);
-        let inverse_matrix = transform_matrix.inverted();
-        let world_cursor = (inverse_matrix * Vec4::new(ncursor.x, ncursor.y, 0.0, 1.0)).round();
-        println!("{}", world_cursor);
+        let scene = Scene::new(screen_size.0, cursor_state.0);
+        let cursor = scene.world_cursor();
+        println!("{}", cursor);
 
         // TODO: this needs a way to handle changing vertices count.
         // NOTE: this could be done much more efficiently,
@@ -354,11 +383,13 @@ impl<'a> System<'a> for Renderer {
             // SAFETY: safe if we don't mutate the mesh before drawing.
             vertex_buffer.update(&gl, 0, &tile_mesh.data);
 
-            gl.viewport(0, 0, iscreen.x, iscreen.y);
-            gl.scissor(0, 0, iscreen.x, iscreen.y);
+            let [x, y] = scene.screen_dimentions();
+            gl.viewport(0, 0, x, y);
+            gl.scissor(0, 0, x, y);
 
             self.program.use_program(&gl);
-            self.program.set_uniform(&gl, "transform", transform_matrix);
+            self.program
+                .set_uniform(&gl, "transform", scene.transform());
             self.texture.bind(&gl);
             gl.bind_vertex_array(self.vertex_array);
 
