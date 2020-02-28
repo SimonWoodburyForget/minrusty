@@ -9,7 +9,7 @@ pub struct Map<C> {
     tiles: Vec<C>,
 
     width: i32,
-    pub height: i32,
+    height: i32,
 }
 
 impl<C: Default> Default for Map<C> {
@@ -40,6 +40,17 @@ impl<C: Default> Map<C> {
             tiles: (0..(width * height)).map(|_| Default::default()).collect(),
         }
     }
+
+    pub fn get(&self, location: Vec2<i32>) -> Option<&C> {
+        if location.x >= 0 && location.y >= 0 && location.x < self.width && location.y < self.height
+        {
+            Some(&self[location])
+        } else {
+            None
+        }
+    }
+
+    pub fn set(&mut self, location: Vec2<i32>) {}
 }
 
 #[derive(Default)]

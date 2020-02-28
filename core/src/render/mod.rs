@@ -19,7 +19,7 @@ pub use types::*;
 pub use uniform::*;
 
 use crate::components::*;
-use crate::game::{CursorState, ScreenSize, UniversePosition};
+use crate::game::{CursorState, Frame, ScreenSize, UniversePosition};
 use crate::loader::Loader;
 use crate::state::GameStart;
 use memory::Pod;
@@ -183,7 +183,6 @@ pub struct Renderer {
     grid_size: Vec2<usize>,
     tile_mesh: Mesh<SpritePipeline>,
 
-    frame: u64,
     frame_duration: Vec<Duration>,
 }
 
@@ -247,8 +246,6 @@ impl Renderer {
             tile_mesh,
 
             grid_size: Vec2::new(grid_height, grid_width),
-
-            frame: 0,
             frame_duration: Vec::new(),
         })
     }
@@ -261,6 +258,7 @@ impl<'a> System<'a> for Renderer {
         Read<'a, ScreenSize>,
         Read<'a, CursorState>,
         Read<'a, UniversePosition>,
+        Read<'a, Frame>,
         ReadStorage<'a, Color>,
         ReadStorage<'a, Position>,
         ReadStorage<'a, Coordinate>,
@@ -281,8 +279,9 @@ impl<'a> System<'a> for Renderer {
             entities,
             _start,
             screen_size,
-            _cursor_state,
+            cursor_state,
             universe_position,
+            frame,
             colors,
             _positions,
             coordinates,
@@ -304,6 +303,37 @@ impl<'a> System<'a> for Renderer {
         let frame_start = Instant::now();
         tile_mesh.clear();
 
+        /// normalize cursor coordinates to clip-space (-1 to 1)
+        fn normalize(screen_size: Vec2<f32>, cursor_position: Vec2<f32>) -> Vec2<f32> {
+            ((cursor_position / screen_size) - Vec2::new(0.5, 0.5)) * 2.0
+        }
+
+        /// convert i32 top to buttom coordinates (screen)
+        /// into f32 buttom to top coordinates (opengl)
+        fn convert(mut vector: Vec2<i32>) -> Vec2<f32> {
+            vector.y = -vector.y;
+            vector.numcast().unwrap()
+        }
+
+        let iscreen = screen_size.0;
+        let fscreen = convert(screen_size.0);
+        let fcursor = convert(cursor_state.0);
+
+        fn transform(screen_size: Vec2<f32>) -> Mat4<f32> {
+            let scale: Mat4<f32> = Mat4::scaling_3d(Vec3::new(100., 100., 1.0));
+            #[rustfmt::skip]
+            let frustum = {
+                FrustumPlanes::<f32> {
+                    left: 0.0, right: screen_size.x,
+                    bottom: 0.0, top: screen_size.y,
+                    near: -10., far: 10.,
+                }
+            };
+            let ortho = Mat4::orthographic_rh_zo(frustum);
+            let trans: Mat4<f32> = Mat4::translation_2d(Vec2::new(0.5, 1.0));
+            (trans * ortho * scale) // * coordinate
+        }
+
         // TODO: this needs a way to handle changing vertices count.
         // NOTE: this could be done much more efficiently,
         // but we're not rendering thousands of tiles yet.
@@ -316,55 +346,14 @@ impl<'a> System<'a> for Renderer {
 
         unsafe {
             // SAFETY: safe if we don't mutate the mesh before drawing.
-            vertex_buffer.update(&gl, 0, &tile_mesh.data)
-        };
+            vertex_buffer.update(&gl, 0, &tile_mesh.data);
 
-        // let seconds = crate::units::Seconds::<f32>::from(start.0.elapsed());
-
-        let [w, h] = screen_size.0.into_array();
-        let (w, h) = (w as f32, h as f32);
-
-        let scale: Mat4<f32> = Mat4::scaling_3d(Vec3::new(300., 300., 1.0));
-
-        #[rustfmt::skip]
-        let frustum = {
-            FrustumPlanes::<f32> {
-                left: 0.0, right: w,
-                bottom: 0.0, top: h,
-                near: -10., far: 10.,
-            }
-        };
-
-        let ortho = Mat4::frustum_rh_no(frustum);
-
-        // let (x, y) = {
-        //     let [a, b] = cursor_state.0.into_array();
-        //     let (a, b) = (a as f32, b as f32);
-        //     let v = Vec2::new(a, b) / Vec2::new(w, h);
-        //     (-1.0 + 0.3 * v.x, -1.0 + 0.3 * v.y)
-        // };
-
-        // let x = -1.0 + 0.3 * seconds.0.sin();
-        // let y = -1.0 + 0.3 * seconds.0.cos();
-
-        let [x, y] = universe_position.0.into_array();
-
-        #[rustfmt::skip]
-        let movit = Mat4::new(
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0,
-              x,   y, 0.0, 1.0,
-        );
-
-        let m = movit * ortho * scale;
-
-        unsafe {
-            gl.viewport(0, 0, w as _, h as _);
-            gl.scissor(0, 0, w as _, h as _);
+            gl.viewport(0, 0, iscreen.x, iscreen.y);
+            gl.scissor(0, 0, iscreen.x, iscreen.y);
 
             self.program.use_program(&gl);
-            self.program.set_uniform(&gl, "transform", m);
+            self.program
+                .set_uniform(&gl, "transform", transform(fscreen));
             self.texture.bind(&gl);
             gl.bind_vertex_array(self.vertex_array);
 
@@ -382,7 +371,7 @@ impl<'a> System<'a> for Renderer {
         let duration = now.duration_since(frame_start);
         self.frame_duration.push(duration);
 
-        if self.frame % 100 == 0 {
+        if frame.0 % 100 == 0 {
             let n: u32 = self.frame_duration.len().try_into().unwrap();
             let avg_duration = self
                 .frame_duration
@@ -394,12 +383,10 @@ impl<'a> System<'a> for Renderer {
 
             println!(
                 "draw {:6} ({:6} -- {:>16})",
-                self.frame,
+                frame.0,
                 "",
                 &format!("{}", humantime::format_duration(avg_duration)),
             );
         }
-
-        self.frame += 1;
     }
 }

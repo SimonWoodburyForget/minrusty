@@ -28,6 +28,6 @@ impl Uniform for vek::Vec4<f32> {
 
 impl Uniform for vek::Mat4<f32> {
     unsafe fn set_as_uniform(&self, gl: &Context, location: Option<UniformLocation>) {
-        gl.uniform_matrix_4_f32_slice(location, false, &self.into_row_array());
+        gl.uniform_matrix_4_f32_slice(location, false, &self.into_col_array());
     }
 }

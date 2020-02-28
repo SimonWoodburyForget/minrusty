@@ -78,6 +78,13 @@ pub fn play() {
     game.create_block(1, 0, "c", 0.3);
     game.create_block(0, 0, "d", 0.4);
     game.create_block(1, 2, "d", 0.5);
+    game.create_block(2, 2, "d", 0.6);
+    game.create_block(2, 1, "d", 0.7);
+    game.create_block(3, 3, "d", 0.8);
+    game.create_block(2, 3, "d", 0.9);
+    game.create_block(3, 2, "d", 0.1);
+    game.create_block(3, 1, "d", 0.2);
+    game.create_block(1, 3, "d", 0.3);
 
     game.ecs.insert(ScreenSize(window.dimensions().into()));
 
