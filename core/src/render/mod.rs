@@ -318,6 +318,7 @@ impl<'a> System<'a> for Renderer {
         let iscreen = screen_size.0;
         let fscreen = convert(screen_size.0);
         let fcursor = convert(cursor_state.0);
+        let ncursor = normalize(fscreen, fcursor);
 
         fn transform(screen_size: Vec2<f32>) -> Mat4<f32> {
             let scale: Mat4<f32> = Mat4::scaling_3d(Vec3::new(100., 100., 1.0));
@@ -333,6 +334,11 @@ impl<'a> System<'a> for Renderer {
             let trans: Mat4<f32> = Mat4::translation_2d(Vec2::new(0.5, 1.0));
             (trans * ortho * scale) // * coordinate
         }
+
+        let transform_matrix = transform(fscreen);
+        let inverse_matrix = transform_matrix.inverted();
+        let world_cursor = (inverse_matrix * Vec4::new(ncursor.x, ncursor.y, 0.0, 1.0)).round();
+        println!("{}", world_cursor);
 
         // TODO: this needs a way to handle changing vertices count.
         // NOTE: this could be done much more efficiently,
@@ -352,8 +358,7 @@ impl<'a> System<'a> for Renderer {
             gl.scissor(0, 0, iscreen.x, iscreen.y);
 
             self.program.use_program(&gl);
-            self.program
-                .set_uniform(&gl, "transform", transform(fscreen));
+            self.program.set_uniform(&gl, "transform", transform_matrix);
             self.texture.bind(&gl);
             gl.bind_vertex_array(self.vertex_array);
 
