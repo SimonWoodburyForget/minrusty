@@ -200,6 +200,8 @@ impl Scene {
         vector.numcast().unwrap()
     }
 
+    /// cursor screen-space to clip-space to world-space transformation,
+    /// for getting the coordinates of the cursor relative to the tiles.
     fn world_cursor(&self) -> Vec2<f32> {
         let Self {
             screen_size,
@@ -214,10 +216,12 @@ impl Scene {
         Vec2::new(x, y)
     }
 
+    /// main world to clip-space transformation
     fn transform(&self) -> Mat4<f32> {
         let Self { screen_size, .. } = self;
         let screen_size = Self::convert(*screen_size);
 
+        // TODO: implement scaling
         let scale: Mat4<f32> = Mat4::scaling_3d(Vec3::new(100., 100., 1.0));
         #[rustfmt::skip]
         let frustum = {
@@ -228,6 +232,7 @@ impl Scene {
             }
         };
         let ortho = Mat4::orthographic_rh_zo(frustum);
+        // TODO: implement player position
         let trans: Mat4<f32> = Mat4::translation_2d(Vec2::new(0.5, 1.0));
         (trans * ortho * scale) // * coordinate
     }
@@ -366,8 +371,6 @@ impl<'a> System<'a> for Renderer {
         tile_mesh.clear();
 
         let scene = Scene::new(screen_size.0, cursor_state.0);
-        let cursor = scene.world_cursor();
-        println!("{}", cursor);
 
         // TODO: this needs a way to handle changing vertices count.
         // NOTE: this could be done much more efficiently,
@@ -417,12 +420,10 @@ impl<'a> System<'a> for Renderer {
 
             self.frame_duration.clear();
 
-            println!(
-                "draw {:6} ({:6} -- {:>16})",
-                frame.0,
-                "",
-                &format!("{}", humantime::format_duration(avg_duration)),
-            );
+            println!("draw ({:>3} μs)", avg_duration.as_micros());
+
+            let cursor = scene.world_cursor().round();
+            println!("cursor ({:>3}, {:>3})", cursor.x, cursor.y);
         }
     }
 }
