@@ -84,15 +84,16 @@ impl Scene {
         &self.screen_size
     }
 
-    /// normalize cursor coordinates to clip-space (-1 to 1)
+    /// normalize cursor coordinates into clip-space (-1 to 1)
     fn normalize(screen_size: Vec2<f32>, cursor_position: Vec2<f32>) -> Vec2<f32> {
-        ((cursor_position / screen_size) - Vec2::new(0.5, 0.5)) * 2.0
+        let mut v = ((cursor_position / screen_size) - Vec2::new(0.5, 0.5)) * 2.0;
+        v.y = -v.y;
+        // NOTE: screen-spaces starts at the top, so we reverse the y axis here.
+        v
     }
 
-    /// convert i32 top to buttom coordinates (screen)
-    /// into f32 buttom to top coordinates (opengl)
-    fn convert(mut vector: Vec2<i32>) -> Vec2<f32> {
-        vector.y = -vector.y;
+    /// convert i32 into f32
+    fn convert(vector: &Vec2<i32>) -> Vec2<f32> {
         vector.numcast().unwrap()
     }
 
@@ -104,18 +105,24 @@ impl Scene {
             cursor_state,
         } = self;
 
-        let fscreen = Self::convert(*screen_size);
-        let fcursor = Self::convert(*cursor_state);
+        let fscreen = Self::convert(screen_size);
+        let fcursor = Self::convert(cursor_state);
         let ncursor = Self::normalize(fscreen, fcursor);
         let imatrix = self.transform().inverted();
+        // NOTE: screen spaces goes top to bottom
         let [x, y, _, _] = (imatrix * Vec4::new(ncursor.x, ncursor.y, 0.0, 1.0)).into_array();
         Vec2::new(x, y)
+    }
+
+    /// a world cursor that rounds to tile coordinates
+    pub fn coordinate_cursor(&self) -> Vec2<i32> {
+        self.world_cursor().round().numcast().unwrap()
     }
 
     /// main world to clip-space transformation
     pub fn transform(&self) -> Mat4<f32> {
         let Self { screen_size, .. } = self;
-        let screen_size = Self::convert(*screen_size);
+        let screen_size = Self::convert(screen_size);
 
         // TODO: implement scaling
         let scale: Mat4<f32> = Mat4::scaling_3d(Vec3::new(100., 100., 1.0));
@@ -213,9 +220,7 @@ pub fn play() {
                     println!("frame {}", frame);
                 }
 
-                *game.ecs.write_resource::<CursorState>() = cursor_state;
-                *game.ecs.write_resource::<ScreenSize>() = ScreenSize(window.dimensions().into());
-                *game.ecs.write_resource::<UniversePosition>() = universe_position;
+                // TODO: universe_position
                 *game.ecs.write_resource::<Frame>() = Frame(frame);
                 *game.ecs.write_resource::<Scene>() =
                     Scene::new(window.dimensions().into(), cursor_state.0);
