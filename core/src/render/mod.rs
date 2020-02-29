@@ -19,7 +19,7 @@ pub use types::*;
 pub use uniform::*;
 
 use crate::components::*;
-use crate::game::{CursorState, Frame, ScreenSize, UniversePosition};
+use crate::game::{Frame, Scene};
 use crate::loader::Loader;
 use crate::state::GameStart;
 use memory::Pod;
@@ -171,73 +171,6 @@ impl Pipeline for SpritePipeline {
     type Vertex = Vertex;
 }
 
-struct Scene {
-    screen_size: Vec2<i32>,
-    cursor_state: Vec2<i32>,
-}
-
-impl Scene {
-    fn new(screen_size: Vec2<i32>, cursor_state: Vec2<i32>) -> Self {
-        Scene {
-            screen_size,
-            cursor_state,
-        }
-    }
-
-    fn screen_dimentions(&self) -> [i32; 2] {
-        self.screen_size.into_array()
-    }
-
-    /// normalize cursor coordinates to clip-space (-1 to 1)
-    fn normalize(screen_size: Vec2<f32>, cursor_position: Vec2<f32>) -> Vec2<f32> {
-        ((cursor_position / screen_size) - Vec2::new(0.5, 0.5)) * 2.0
-    }
-
-    /// convert i32 top to buttom coordinates (screen)
-    /// into f32 buttom to top coordinates (opengl)
-    fn convert(mut vector: Vec2<i32>) -> Vec2<f32> {
-        vector.y = -vector.y;
-        vector.numcast().unwrap()
-    }
-
-    /// cursor screen-space to clip-space to world-space transformation,
-    /// for getting the coordinates of the cursor relative to the tiles.
-    fn world_cursor(&self) -> Vec2<f32> {
-        let Self {
-            screen_size,
-            cursor_state,
-        } = self;
-
-        let fscreen = Self::convert(*screen_size);
-        let fcursor = Self::convert(*cursor_state);
-        let ncursor = Self::normalize(fscreen, fcursor);
-        let imatrix = self.transform().inverted();
-        let [x, y, _, _] = (imatrix * Vec4::new(ncursor.x, ncursor.y, 0.0, 1.0)).into_array();
-        Vec2::new(x, y)
-    }
-
-    /// main world to clip-space transformation
-    fn transform(&self) -> Mat4<f32> {
-        let Self { screen_size, .. } = self;
-        let screen_size = Self::convert(*screen_size);
-
-        // TODO: implement scaling
-        let scale: Mat4<f32> = Mat4::scaling_3d(Vec3::new(100., 100., 1.0));
-        #[rustfmt::skip]
-        let frustum = {
-            FrustumPlanes::<f32> {
-                left: 0.0, right: screen_size.x,
-                bottom: 0.0, top: screen_size.y,
-                near: -10., far: 10.,
-            }
-        };
-        let ortho = Mat4::orthographic_rh_zo(frustum);
-        // TODO: implement player position
-        let trans: Mat4<f32> = Mat4::translation_2d(Vec2::new(0.5, 1.0));
-        (trans * ortho * scale) // * coordinate
-    }
-}
-
 /// Type which holds onto the OpenGL context, and the various objects that surrounds it.
 pub struct Renderer {
     gl: Context,
@@ -322,10 +255,8 @@ impl<'a> System<'a> for Renderer {
     type SystemData = (
         Entities<'a>,
         Read<'a, GameStart>,
-        Read<'a, ScreenSize>,
-        Read<'a, CursorState>,
-        Read<'a, UniversePosition>,
         Read<'a, Frame>,
+        Read<'a, Scene>,
         ReadStorage<'a, Color>,
         ReadStorage<'a, Position>,
         ReadStorage<'a, Coordinate>,
@@ -345,10 +276,8 @@ impl<'a> System<'a> for Renderer {
         (
             entities,
             _start,
-            screen_size,
-            cursor_state,
-            universe_position,
             frame,
+            scene,
             colors,
             _positions,
             coordinates,
@@ -370,8 +299,6 @@ impl<'a> System<'a> for Renderer {
         let frame_start = Instant::now();
         tile_mesh.clear();
 
-        let scene = Scene::new(screen_size.0, cursor_state.0);
-
         // TODO: this needs a way to handle changing vertices count.
         // NOTE: this could be done much more efficiently,
         // but we're not rendering thousands of tiles yet.
@@ -386,7 +313,7 @@ impl<'a> System<'a> for Renderer {
             // SAFETY: safe if we don't mutate the mesh before drawing.
             vertex_buffer.update(&gl, 0, &tile_mesh.data);
 
-            let [x, y] = scene.screen_dimentions();
+            let [x, y] = scene.screen_dimentions().into_array();
             gl.viewport(0, 0, x, y);
             gl.scissor(0, 0, x, y);
 

@@ -66,6 +66,74 @@ pub mod resources {
     pub struct Frame(pub u64);
 }
 
+#[derive(Default)]
+pub struct Scene {
+    screen_size: Vec2<i32>,
+    cursor_state: Vec2<i32>,
+}
+
+impl Scene {
+    fn new(screen_size: Vec2<i32>, cursor_state: Vec2<i32>) -> Self {
+        Scene {
+            screen_size,
+            cursor_state,
+        }
+    }
+
+    pub fn screen_dimentions(&self) -> &Vec2<i32> {
+        &self.screen_size
+    }
+
+    /// normalize cursor coordinates to clip-space (-1 to 1)
+    fn normalize(screen_size: Vec2<f32>, cursor_position: Vec2<f32>) -> Vec2<f32> {
+        ((cursor_position / screen_size) - Vec2::new(0.5, 0.5)) * 2.0
+    }
+
+    /// convert i32 top to buttom coordinates (screen)
+    /// into f32 buttom to top coordinates (opengl)
+    fn convert(mut vector: Vec2<i32>) -> Vec2<f32> {
+        vector.y = -vector.y;
+        vector.numcast().unwrap()
+    }
+
+    /// cursor screen-space to clip-space to world-space transformation,
+    /// for getting the coordinates of the cursor relative to the tiles.
+    pub fn world_cursor(&self) -> Vec2<f32> {
+        let Self {
+            screen_size,
+            cursor_state,
+        } = self;
+
+        let fscreen = Self::convert(*screen_size);
+        let fcursor = Self::convert(*cursor_state);
+        let ncursor = Self::normalize(fscreen, fcursor);
+        let imatrix = self.transform().inverted();
+        let [x, y, _, _] = (imatrix * Vec4::new(ncursor.x, ncursor.y, 0.0, 1.0)).into_array();
+        Vec2::new(x, y)
+    }
+
+    /// main world to clip-space transformation
+    pub fn transform(&self) -> Mat4<f32> {
+        let Self { screen_size, .. } = self;
+        let screen_size = Self::convert(*screen_size);
+
+        // TODO: implement scaling
+        let scale: Mat4<f32> = Mat4::scaling_3d(Vec3::new(100., 100., 1.0));
+        #[rustfmt::skip]
+        let frustum = {
+            FrustumPlanes::<f32> {
+                left: 0.0, right: screen_size.x,
+                bottom: 0.0, top: screen_size.y,
+                near: -10., far: 10.,
+            }
+        };
+        let ortho = Mat4::orthographic_rh_zo(frustum);
+        // TODO: implement player position
+        let trans: Mat4<f32> = Mat4::translation_2d(Vec2::new(0.5, 1.0));
+        (trans * ortho * scale) // * coordinate
+    }
+}
+
 pub fn play() {
     let mut clock = clock::Clock::new();
     let event_loop = winit::event_loop::EventLoop::new();
@@ -149,6 +217,8 @@ pub fn play() {
                 *game.ecs.write_resource::<ScreenSize>() = ScreenSize(window.dimensions().into());
                 *game.ecs.write_resource::<UniversePosition>() = universe_position;
                 *game.ecs.write_resource::<Frame>() = Frame(frame);
+                *game.ecs.write_resource::<Scene>() =
+                    Scene::new(window.dimensions().into(), cursor_state.0);
 
                 game.tick();
                 window.on_event(window::Event::Draw);
