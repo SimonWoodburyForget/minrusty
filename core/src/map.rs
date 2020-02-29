@@ -1,6 +1,5 @@
 use crate::components::*;
 use specs::prelude::*;
-use std::ops::{Index, IndexMut};
 use vek::*;
 
 /// Tile storage.
@@ -18,19 +17,6 @@ impl<C: Default> Default for Map<C> {
     }
 }
 
-impl<C> Index<Vec2<i32>> for Map<C> {
-    type Output = C;
-    fn index(&self, position: Vec2<i32>) -> &C {
-        &self.tiles[((position.y * self.width) + position.x) as usize]
-    }
-}
-
-impl<C> IndexMut<Vec2<i32>> for Map<C> {
-    fn index_mut(&mut self, position: Vec2<i32>) -> &mut C {
-        &mut self.tiles[((position.y * self.width) + position.x) as usize]
-    }
-}
-
 impl<C: Default> Map<C> {
     fn with_dimentions(dimentions: Vec2<i32>) -> Self {
         let [width, height] = dimentions.into_array();
@@ -41,16 +27,22 @@ impl<C: Default> Map<C> {
         }
     }
 
-    pub fn get(&self, location: Vec2<i32>) -> Option<&C> {
-        if location.x >= 0 && location.y >= 0 && location.x < self.width && location.y < self.height
+    pub fn get(&self, coordinate: Vec2<i32>) -> Option<&C> {
+        if coordinate.x >= 0
+            && coordinate.y >= 0
+            && coordinate.x < self.width
+            && coordinate.y < self.height
         {
-            Some(&self[location])
+            let value = &self.tiles[((coordinate.y * self.width) + coordinate.x) as usize];
+            Some(value)
         } else {
             None
         }
     }
 
-    pub fn set(&mut self, location: Vec2<i32>) {}
+    pub fn set(&mut self, coordinate: Vec2<i32>, value: C) {
+        self.tiles[((coordinate.y * self.width) + coordinate.x) as usize] = value;
+    }
 }
 
 #[derive(Default)]
@@ -101,11 +93,11 @@ impl<'a> System<'a> for MappingSystem {
         }
 
         for (entity, coordinate, _) in (&entities, &coordinates, &*inserted).join() {
-            map[coordinate.0].tile = Some(entity);
+            map.set(coordinate.0, Cell { tile: Some(entity) });
         }
 
         for (entity, coordinate, _) in (&entities, &coordinates, &*modified).join() {
-            map[coordinate.0].tile = Some(entity);
+            map.set(coordinate.0, Cell { tile: Some(entity) });
         }
 
         // TODO: tracking removals...?
@@ -123,8 +115,8 @@ mod tests {
     fn map_test() {
         let mut map: Map<bool> = Map::with_dimentions(Vec2::new(10, 10));
         let index = Vec2::new(2, 3);
-        map[index] = true;
-        assert!(map[index]);
-        assert!(!map[index + Vec2::new(0, 1)]);
+        map.set(index, true);
+        assert!(map.get(index).unwrap());
+        assert!(map.get(index + Vec2::new(0, 1)).unwrap());
     }
 }
