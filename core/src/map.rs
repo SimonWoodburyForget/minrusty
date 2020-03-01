@@ -117,6 +117,6 @@ mod tests {
         let index = Vec2::new(2, 3);
         map.set(index, true);
         assert!(map.get(index).unwrap());
-        assert!(map.get(index + Vec2::new(0, 1)).unwrap());
+        assert!(!map.get(index + Vec2::new(0, 1)).unwrap());
     }
 }

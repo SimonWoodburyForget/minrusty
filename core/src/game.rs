@@ -1,5 +1,6 @@
 use crate::window::Window;
 use crate::*;
+use rand::prelude::*;
 use specs::prelude::*;
 use state::GameStart;
 use std::time::Duration;
@@ -148,18 +149,23 @@ pub fn play() {
 
     let mut game = state::GameState::new(renderer);
 
-    game.create_block(0, 1, "a", 0.1);
-    game.create_block(1, 1, "b", 0.2);
-    game.create_block(1, 0, "c", 0.3);
-    game.create_block(0, 0, "d", 0.4);
-    game.create_block(1, 2, "d", 0.5);
-    game.create_block(2, 2, "d", 0.6);
-    game.create_block(2, 1, "d", 0.7);
-    game.create_block(3, 3, "d", 0.8);
-    game.create_block(2, 3, "d", 0.9);
-    game.create_block(3, 2, "d", 0.1);
-    game.create_block(3, 1, "d", 0.2);
-    game.create_block(1, 3, "d", 0.3);
+    let mut rng = rand::thread_rng();
+    let mut a = vec!["a"; 100];
+    let b = vec!["b"; 100];
+    let c = vec!["c"; 100];
+    let d = vec!["d"; 100];
+
+    a.extend(b);
+    a.extend(c);
+    a.extend(d);
+    a.shuffle(&mut rng);
+    let mut content = a.iter().cycle();
+
+    for i in 0..16 {
+        for j in 0..10 {
+            game.create_block(i, j, content.next().unwrap(), rng.gen());
+        }
+    }
 
     game.ecs.insert(ScreenSize(window.dimensions().into()));
 

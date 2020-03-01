@@ -213,7 +213,7 @@ impl Renderer {
 
         let tile_mesh = Mesh::default();
 
-        let buffer_size = 6 * 4 * 1000;
+        let buffer_size = 6 * 4 * 1000 * 321; // FIXME: buffer size shouldn't be hardcoded
         let vertex_buffer = Buffer::dynamic(&gl, glow::ARRAY_BUFFER, buffer_size)?;
 
         let vertex_array;
@@ -308,6 +308,13 @@ impl<'a> System<'a> for Renderer {
             let v = Vec2::new(x, y);
             tile_mesh.push_quad(Quad::rect(v, 0.0, t, color.0));
         }
+
+        tile_mesh.push_quad(Quad::rect(
+            scene.coordinate_cursor().numcast().unwrap(),
+            0.0,
+            2,
+            Rgba::broadcast(0.7),
+        ));
 
         unsafe {
             // SAFETY: safe if we don't mutate the mesh before drawing.
