@@ -149,20 +149,17 @@ pub fn play() {
 
     let mut game = state::GameState::new(renderer);
 
+    // FIXME: makes wasm crash.
     let mut rng = rand::thread_rng();
     let mut a = vec!["a"; 100];
-    let b = vec!["b"; 100];
-    let c = vec!["c"; 100];
-    let d = vec!["d"; 100];
-
-    a.extend(b);
-    a.extend(c);
-    a.extend(d);
+    a.extend(["b"; 100].as_ref());
+    a.extend(["b"; 100].as_ref());
+    a.extend(["b"; 100].as_ref());
     a.shuffle(&mut rng);
     let mut content = a.iter().cycle();
 
-    for i in 0..16 {
-        for j in 0..10 {
+    for i in 0..3 {
+        for j in 0..3 {
             game.create_block(i, j, content.next().unwrap(), rng.gen());
         }
     }
@@ -202,7 +199,7 @@ pub fn play() {
                             VirtualKeyCode::Right => key_state.right = held,
                             VirtualKeyCode::Space => {
                                 universe_position.0.x += 0.1;
-                                println!("{:?}", universe_position);
+                                // println!("{:?}", universe_position);
                             }
                             _ => {}
                         };
@@ -222,8 +219,8 @@ pub fn play() {
                 // let y = -1.0 + 0.3 * seconds.0.cos();
                 let frame = game.ecs.read_resource::<Frame>().0 + 1;
                 if frame % 100 == 0 {
-                    println!("");
-                    println!("frame {}", frame);
+                    // println!("");
+                    // println!("frame {}", frame);
                 }
 
                 // TODO: universe_position

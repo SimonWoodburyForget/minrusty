@@ -101,10 +101,10 @@ impl Window {
 
             // NOTE: canvas doesn't expect to be resized by the user, but we use CSS to
             // resize it, which doesn't fire any events, so this is required to maintain.
-            canvas.set_width(w);
-            canvas.set_height(h);
+            canvas.set_width(w.try_into().unwrap());
+            canvas.set_height(h.try_into().unwrap());
 
-            (w as _, h as _)
+            (w, h)
         }
 
         #[cfg(feature = "nat")]

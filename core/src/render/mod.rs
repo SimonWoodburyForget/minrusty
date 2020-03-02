@@ -354,10 +354,10 @@ impl<'a> System<'a> for Renderer {
 
             self.frame_duration.clear();
 
-            println!("draw ({:>3} μs)", avg_duration.as_micros());
+            // println!("draw ({:>3} μs)", avg_duration.as_micros());
 
             let cursor = scene.world_cursor().round();
-            println!("cursor ({:>3}, {:>3})", cursor.x, cursor.y);
+            // println!("cursor ({:>3}, {:>3})", cursor.x, cursor.y);
         }
     }
 }

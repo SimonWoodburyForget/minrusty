@@ -48,6 +48,6 @@ Buliding web requires the `wasm-pack` cli tool, and requires passing
 the `web` feature and removing the default `nat` feature.
 
 ```
-wasm-pack build --target=web -- --features=web --no-default-features
+wasm-pack build core --target=web -- --features=web --no-default-features
 ```
 
