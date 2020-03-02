@@ -13,7 +13,7 @@ An experimental game development side project.
 crate-type = ["cdylib", "rlib"]
 
 [features]
-web = ["glow/web-sys", "winit/web-sys", "web-sys", "wasm-bindgen", "instant/wasm-bindgen"]
+web = ["glow/web-sys", "winit/web-sys", "web-sys", "wasm-bindgen", "instant/wasm-bindgen", "rand/wasm-bindgen"]
 nat = ["glow/glutin", "glutin", "specs/parallel"]
 
 # NOTE: native is default to prevent IDE related problems.

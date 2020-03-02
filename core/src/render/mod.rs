@@ -107,7 +107,8 @@ impl Vertex {
             VertexAttribute::new(loc::VERT_POS, 2, DataType::Float, offset_of!(Vertex, pos)),
             VertexAttribute::new(loc::TEXT_POS, 2, DataType::Float, offset_of!(Vertex, tex)),
             // FIXME: `Float` works but `Uint` doesn't
-            VertexAttribute::new(loc::TEXT_IDX, 1, DataType::Float, offset_of!(Vertex, idx)),
+            // FIXME: wasm wants `Uint`
+            VertexAttribute::new(loc::TEXT_IDX, 1, DataType::Uint, offset_of!(Vertex, idx)),
             VertexAttribute::new(loc::VERT_COL, 4, DataType::Float, offset_of!(Vertex, color)),
         ]
     }

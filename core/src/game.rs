@@ -146,10 +146,8 @@ pub fn play() {
     let mut clock = clock::Clock::new();
     let event_loop = winit::event_loop::EventLoop::new();
     let (window, renderer) = Window::new(&event_loop).unwrap();
-
     let mut game = state::GameState::new(renderer);
 
-    // FIXME: makes wasm crash.
     let mut rng = rand::thread_rng();
     let mut a = vec!["a"; 100];
     a.extend(["b"; 100].as_ref());
