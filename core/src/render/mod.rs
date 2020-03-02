@@ -106,9 +106,7 @@ impl Vertex {
         [
             VertexAttribute::new(loc::VERT_POS, 2, DataType::Float, offset_of!(Vertex, pos)),
             VertexAttribute::new(loc::TEXT_POS, 2, DataType::Float, offset_of!(Vertex, tex)),
-            // FIXME: `Float` works but `Uint` doesn't
-            // FIXME: wasm wants `Uint`
-            VertexAttribute::new(loc::TEXT_IDX, 1, DataType::Uint, offset_of!(Vertex, idx)),
+            VertexAttribute::new(loc::TEXT_IDX, 1, DataType::Float, offset_of!(Vertex, idx)),
             VertexAttribute::new(loc::VERT_COL, 4, DataType::Float, offset_of!(Vertex, color)),
         ]
     }
@@ -223,17 +221,46 @@ impl Renderer {
             gl.bind_vertex_array(vertex_array);
 
             vertex_buffer.bind(&gl);
-            for attr in Vertex::vertex_attributes().iter() {
-                gl.vertex_attrib_pointer_f32(
-                    attr.location,
-                    attr.size,
-                    attr.data_type,
-                    attr.norm,
-                    Vertex::stride_size() as _,
-                    attr.offset as _,
-                );
-                gl.enable_vertex_attrib_array(attr.location);
-            }
+
+            // TODO: refactor this mess
+            gl.vertex_attrib_pointer_f32(
+                loc::VERT_POS,
+                2,
+                glow::FLOAT,
+                false,
+                std::mem::size_of::<Vertex>().try_into().unwrap(),
+                offset_of!(Vertex, pos).try_into().unwrap(),
+            );
+            gl.enable_vertex_attrib_array(loc::VERT_POS);
+
+            gl.vertex_attrib_pointer_f32(
+                loc::TEXT_POS,
+                2,
+                glow::FLOAT,
+                false,
+                std::mem::size_of::<Vertex>().try_into().unwrap(),
+                offset_of!(Vertex, tex).try_into().unwrap(),
+            );
+            gl.enable_vertex_attrib_array(loc::TEXT_POS);
+
+            gl.vertex_attrib_pointer_i32(
+                loc::TEXT_IDX,
+                1,
+                glow::UNSIGNED_INT,
+                std::mem::size_of::<Vertex>().try_into().unwrap(),
+                offset_of!(Vertex, idx).try_into().unwrap(),
+            );
+            gl.enable_vertex_attrib_array(loc::TEXT_IDX);
+
+            gl.vertex_attrib_pointer_f32(
+                loc::VERT_COL,
+                4,
+                glow::FLOAT,
+                false,
+                std::mem::size_of::<Vertex>().try_into().unwrap(),
+                offset_of!(Vertex, color).try_into().unwrap(),
+            );
+            gl.enable_vertex_attrib_array(loc::VERT_COL);
         }
 
         Ok(Self {
