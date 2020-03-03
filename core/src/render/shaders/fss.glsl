@@ -4,7 +4,7 @@ precision mediump sampler2DArray;
 
 in vec2 f_text_pos;
 in vec4 frag_col;
-flat in uint idx;
+flat in int idx;
 
 out vec4 color;
 

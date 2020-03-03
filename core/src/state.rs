@@ -37,6 +37,7 @@ impl GameState {
         world.insert(DeltaTime::default());
 
         let mut dispatcher = DispatcherBuilder::new()
+            .with(crate::logger::Sys::default(), "log-system", &[])
             .with(MappingSystem::default(), "mapping-system", &[])
             .with(AssetSystem::default(), "asset-system", &[])
             .with(

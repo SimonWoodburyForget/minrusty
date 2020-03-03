@@ -81,7 +81,7 @@ pub struct Vertex {
     tex: [f32; 2],
 
     /// Texture array index.
-    idx: u32,
+    idx: i32,
 
     /// Color of this vertex.
     color: [f32; 4],
@@ -136,6 +136,7 @@ impl Quad<SpritePipeline> {
     pub fn rect(xy: Vec2<f32>, size: f32, idx: u32, color: Rgba<f32>) -> Self {
         let [x, y] = xy.into_array();
         let color = color.into_array();
+        let idx = idx.try_into().unwrap();
         let s = size;
         Self::new(
             Vertex { pos: [ 0.5 + x + s,  0.5 + y + s], tex: [1.0, 1.0], idx, color },
@@ -246,7 +247,7 @@ impl Renderer {
             gl.vertex_attrib_pointer_i32(
                 loc::TEXT_IDX,
                 1,
-                glow::UNSIGNED_INT,
+                glow::INT,
                 std::mem::size_of::<Vertex>().try_into().unwrap(),
                 offset_of!(Vertex, idx).try_into().unwrap(),
             );

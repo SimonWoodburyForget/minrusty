@@ -1,13 +1,13 @@
 #[macro_use]
 extern crate memoffset;
 
-mod error;
-// mod platform;
 mod builder;
 mod clock;
 mod components;
+mod error;
 pub mod game;
 mod loader;
+mod logger;
 mod map;
 mod physics;
 mod render;
