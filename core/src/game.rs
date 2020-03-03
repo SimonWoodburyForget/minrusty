@@ -1,3 +1,6 @@
+//! Crate which holds the main event loop and various generic game
+//! resources used globally throughout the game.
+
 use crate::window::Window;
 use crate::*;
 use rand::prelude::*;
@@ -51,17 +54,6 @@ impl From<KeyState> for Vec2<f32> {
 pub use resources::*;
 pub mod resources {
     use super::*;
-
-    #[derive(Default)]
-    pub struct ScreenSize(pub Vec2<i32>);
-
-    #[derive(Default, Clone, Copy)]
-    pub struct CursorState(pub Vec2<i32>);
-
-    /// As the player moves through the universe, the position of
-    /// the universe changes, not the player itself.
-    #[derive(Default, Clone, Copy, Debug)]
-    pub struct UniversePosition(pub Vec2<f32>);
 
     #[derive(Default)]
     pub struct Frame(pub u64);
@@ -162,11 +154,9 @@ pub fn play() {
         }
     }
 
-    game.ecs.insert(ScreenSize(window.dimensions().into()));
-
     let mut key_state = KeyState::default();
-    let mut cursor_state = CursorState::default();
-    let mut universe_position = UniversePosition::default();
+    let mut cursor_state = Default::default();
+    // let mut universe_position = Default::default();
 
     event_loop.run(move |event, _, control_flow| {
         use winit::event_loop::ControlFlow;
@@ -195,10 +185,7 @@ pub fn play() {
                             VirtualKeyCode::Down => key_state.down = held,
                             VirtualKeyCode::Left => key_state.left = held,
                             VirtualKeyCode::Right => key_state.right = held,
-                            VirtualKeyCode::Space => {
-                                universe_position.0.x += 0.1;
-                                // println!("{:?}", universe_position);
-                            }
+                            VirtualKeyCode::Space => {}
                             _ => {}
                         };
                     };
@@ -206,7 +193,7 @@ pub fn play() {
 
                 WindowEvent::CursorMoved { position, .. } => {
                     let PhysicalPosition { x, y } = position;
-                    cursor_state.0 = Vec2::new(x, y);
+                    cursor_state = Vec2::new(x, y);
                 }
 
                 _ => {}
@@ -224,7 +211,7 @@ pub fn play() {
                 // TODO: universe_position
                 *game.ecs.write_resource::<Frame>() = Frame(frame);
                 *game.ecs.write_resource::<Scene>() =
-                    Scene::new(window.dimensions().into(), cursor_state.0);
+                    Scene::new(window.dimensions().into(), cursor_state);
 
                 game.tick();
                 window.on_event(window::Event::Draw);
