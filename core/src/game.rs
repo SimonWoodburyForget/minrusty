@@ -89,6 +89,10 @@ pub mod resources {
             vector.numcast().unwrap()
         }
 
+        pub fn screen_cursor(&self) -> &Vec2<i32> {
+            &self.cursor_state
+        }
+
         /// cursor screen-space to clip-space to world-space transformation,
         /// for getting the coordinates of the cursor relative to the tiles.
         pub fn world_cursor(&self) -> Vec2<f32> {

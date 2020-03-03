@@ -31,9 +31,14 @@ impl<'a> System<'a> for Sys {
     );
 
     fn run(&mut self, (frame, scene): Self::SystemData) {
+        let mut buffer = String::new();
+
+        buffer.push_str(&format!("\n frame {}", frame.0));
+        buffer.push_str(&format!("\n dims {:?}", scene.screen_dimentions()));
+        buffer.push_str(&format!("\n cursor {:?}", scene.screen_cursor()));
+
         if frame.0 % 100 == 0 {
-            println!("");
-            println!("frame {}", frame.0);
+            log(&buffer);
         }
 
         // for entry in entries.read(&mut self.reader_id.as_mut().unwrap()) {}
