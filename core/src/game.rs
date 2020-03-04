@@ -5,28 +5,8 @@ use crate::window::Window;
 use crate::*;
 use rand::prelude::*;
 use specs::prelude::*;
-use state::GameStart;
-use std::time::Duration;
 use vek::*;
 use winit::dpi::PhysicalPosition;
-
-#[cfg(feature = "web")]
-mod wasm {
-    use wasm_bindgen::prelude::*;
-
-    #[wasm_bindgen]
-    extern "C" {
-        #[wasm_bindgen(js_namespace = console)]
-        pub fn log(s: &str);
-    }
-}
-
-pub fn log(x: &str) {
-    #[cfg(feature = "web")]
-    wasm::log(x);
-    #[cfg(feature = "nat")]
-    println!("{}", x);
-}
 
 #[derive(Default)]
 struct KeyState {
@@ -172,8 +152,6 @@ pub fn play() {
 
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-
-                WindowEvent::Resized(ref _size) => {}
 
                 WindowEvent::KeyboardInput { input, .. } => {
                     use winit::event::{ElementState, KeyboardInput, VirtualKeyCode};

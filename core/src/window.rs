@@ -93,24 +93,41 @@ impl Window {
         }
     }
 
+    pub fn device_pixel_ratio(&self) -> f64 {
+        #[cfg(feature = "web")]
+        {
+            let window = web_sys::window().unwrap();
+            window.device_pixel_ratio()
+        }
+        #[cfg(feature = "nat")]
+        {
+            unimplemented!();
+        }
+    }
+
     pub fn dimensions(&self) -> (i32, i32) {
+        use winit::dpi::*;
         #[cfg(feature = "web")]
         {
             let canvas = self.window.canvas();
-            let (w, h) = (canvas.client_width(), canvas.client_height());
+            let (width, height) = (canvas.client_width(), canvas.client_height());
+
+            // NOTE: prevents browser zoom factor from affecting the canvas resolution.
+            let factor = self.window.scale_factor();
+            let logical = LogicalSize { width, height };
+            let PhysicalSize { width, height } = logical.to_physical(factor);
+            crate::logger::log(&format!("{} {}", width, height));
 
             // NOTE: canvas doesn't expect to be resized by the user, but we use CSS to
             // resize it, which doesn't fire any events, so this is required to maintain.
-            canvas.set_width(w.try_into().unwrap());
-            canvas.set_height(h.try_into().unwrap());
+            canvas.set_width(width);
+            canvas.set_height(height);
 
-            (w, h)
+            (width as i32, height as i32)
         }
-
         #[cfg(feature = "nat")]
         {
-            let winit::dpi::PhysicalSize { width, height } =
-                self.windowed_context.window().inner_size();
+            let PhysicalSize { width, height } = self.windowed_context.window().inner_size();
             (width.try_into().unwrap(), height.try_into().unwrap())
         }
     }

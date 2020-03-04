@@ -39,7 +39,6 @@ impl Program {
                 gl.shader_source(shader, shader_source);
                 gl.compile_shader(shader);
                 if !gl.get_shader_compile_status(shader) {
-                    crate::log("Shader failed to compile.");
                     return Err(RenderError::from(gl.get_shader_info_log(shader)));
                 } else {
                     gl.attach_shader(program_id, shader);

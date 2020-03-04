@@ -30,47 +30,6 @@ use specs::prelude::*;
 use std::convert::TryInto;
 use vek::*;
 
-#[allow(dead_code)]
-pub enum DataType {
-    Float,
-    Int,
-    Uint,
-}
-
-impl DataType {
-    fn data_type(&self) -> u32 {
-        match self {
-            DataType::Float => glow::FLOAT,
-            DataType::Int => glow::INT,
-            DataType::Uint => glow::UNSIGNED_INT,
-        }
-    }
-
-    fn normalize(&self) -> bool {
-        false
-    }
-}
-
-pub struct VertexAttribute {
-    location: u32,
-    size: i32,
-    data_type: u32,
-    norm: bool,
-    offset: usize,
-}
-
-impl VertexAttribute {
-    fn new(location: u32, size: i32, dtype: DataType, offset: usize) -> Self {
-        Self {
-            location,
-            size,
-            data_type: dtype.data_type(),
-            norm: dtype.normalize(),
-            offset,
-        }
-    }
-}
-
 #[derive(Copy, Clone, Default)]
 #[repr(C, packed)]
 pub struct Vertex {
@@ -95,21 +54,6 @@ mod loc {
     pub const TEXT_POS: u32 = 1;
     pub const TEXT_IDX: u32 = 2;
     pub const VERT_COL: u32 = 3;
-}
-
-impl Vertex {
-    fn stride_size() -> usize {
-        std::mem::size_of::<Self>()
-    }
-
-    fn vertex_attributes() -> [VertexAttribute; 4] {
-        [
-            VertexAttribute::new(loc::VERT_POS, 2, DataType::Float, offset_of!(Vertex, pos)),
-            VertexAttribute::new(loc::TEXT_POS, 2, DataType::Float, offset_of!(Vertex, tex)),
-            VertexAttribute::new(loc::TEXT_IDX, 1, DataType::Float, offset_of!(Vertex, idx)),
-            VertexAttribute::new(loc::VERT_COL, 4, DataType::Float, offset_of!(Vertex, color)),
-        ]
-    }
 }
 
 pub trait Pipeline {
