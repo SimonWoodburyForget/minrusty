@@ -6,9 +6,25 @@ use image::DynamicImage;
 use std::convert::TryInto;
 use vek::*;
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy)]
+enum Type {
+    Texture2dArray,
+    Texture2d,
+}
+
+impl Type {
+    fn into_gl(&self) -> u32 {
+        match self {
+            Type::Texture2dArray => glow::TEXTURE_2D_ARRAY,
+            Type::Texture2d => glow::TEXTURE_2D,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct Texture {
     texture_id: Option<TextureId>,
+    texture_type: Type,
     size: Vec3<i32>,
     slot: u32,
     level: i32,
@@ -23,6 +39,7 @@ impl Texture {
 
     /// Creates a texture array for n-images of a specific size.
     pub fn new(gl: &Context, size: Vec3<u32>) -> Result<Self, RenderError> {
+        let texture_type = Type::Texture2dArray;
         let size = size.numcast().unwrap();
         let level = 0;
         let border = 0;
@@ -34,10 +51,10 @@ impl Texture {
             texture_id = Some(gl.create_texture()?);
 
             gl.active_texture(glow::TEXTURE0 + slot);
-            gl.bind_texture(glow::TEXTURE_2D_ARRAY, texture_id);
+            gl.bind_texture(texture_type.into_gl(), texture_id);
 
             gl.tex_image_3d(
-                glow::TEXTURE_2D_ARRAY,
+                texture_type.into_gl(),
                 level,
                 glow::RGBA as i32,
                 size.x,
@@ -51,34 +68,34 @@ impl Texture {
 
             // gl.pixel_store_i32(glow::PACK_ALIGNMENT, 1);
 
-            gl.generate_mipmap(glow::TEXTURE_2D_ARRAY);
+            gl.generate_mipmap(texture_type.into_gl());
 
             gl.tex_parameter_i32(
-                glow::TEXTURE_2D_ARRAY,
+                texture_type.into_gl(),
                 glow::TEXTURE_MIN_FILTER,
                 glow::NEAREST_MIPMAP_LINEAR as i32,
             );
 
             gl.tex_parameter_i32(
-                glow::TEXTURE_2D_ARRAY,
+                texture_type.into_gl(),
                 glow::TEXTURE_MAG_FILTER,
                 glow::NEAREST as i32,
             );
 
             gl.tex_parameter_i32(
-                glow::TEXTURE_2D_ARRAY,
+                texture_type.into_gl(),
                 glow::TEXTURE_MAX_LEVEL,
                 4
             );
 
             gl.tex_parameter_i32(
-                glow::TEXTURE_2D_ARRAY,
+                texture_type.into_gl(),
                 glow::TEXTURE_WRAP_S,
                 glow::REPEAT as i32,
             );
 
             gl.tex_parameter_i32(
-                glow::TEXTURE_2D_ARRAY,
+                texture_type.into_gl(),
                 glow::TEXTURE_WRAP_T,
                 glow::REPEAT as i32,
             );
@@ -89,6 +106,7 @@ impl Texture {
             texture_id,
             size,
             slot,
+            texture_type,
         })
     }
 
@@ -114,7 +132,7 @@ impl Texture {
             self.bind(&gl);
 
             gl.tex_sub_image_3d_u8_slice(
-                glow::TEXTURE_2D_ARRAY,
+                self.texture_type.into_gl(),
                 self.level,
                 pos1.x,
                 pos1.y,
@@ -132,7 +150,7 @@ impl Texture {
     pub fn bind(&self, gl: &Context) {
         unsafe {
             gl.active_texture(glow::TEXTURE0 + self.slot);
-            gl.bind_texture(glow::TEXTURE_2D_ARRAY, self.texture_id);
+            gl.bind_texture(self.texture_type.into_gl(), self.texture_id);
         }
     }
 }
