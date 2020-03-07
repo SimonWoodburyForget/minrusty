@@ -30,8 +30,16 @@ use specs::prelude::*;
 use std::convert::TryInto;
 use vek::*;
 
+/// Constant vertex attribute locations used across shaders.
+mod loc {
+    pub const VERT_POS: u32 = 0;
+    pub const TEXT_POS: u32 = 1;
+    pub const TEXT_IDX: u32 = 2;
+    pub const VERT_COL: u32 = 3;
+}
+
 #[derive(Copy, Clone, Default)]
-#[repr(C, packed)]
+#[repr(C)]
 pub struct Vertex {
     /// Position of the vertex.
     pos: [f32; 2],
@@ -40,21 +48,13 @@ pub struct Vertex {
     tex: [f32; 2],
 
     /// Texture array index.
-    idx: i32,
+    idx: u32,
 
     /// Color of this vertex.
     color: [f32; 4],
 }
 
 unsafe impl Pod for Vertex {}
-
-/// Constant vertex attribute locations used across shaders.
-mod loc {
-    pub const VERT_POS: u32 = 0;
-    pub const TEXT_POS: u32 = 1;
-    pub const TEXT_IDX: u32 = 2;
-    pub const VERT_COL: u32 = 3;
-}
 
 pub trait Pipeline {
     /// A vertex should be capable of casting itself to buffer data, and configuring
@@ -77,11 +77,9 @@ impl<P: Pipeline> Quad<P> {
 
 impl Quad<SpritePipeline> {
     #[rustfmt::skip]
-    pub fn rect(xy: Vec2<f32>, size: f32, idx: u32, color: Rgba<f32>) -> Self {
+    pub fn rect(xy: Vec2<f32>, s: f32, idx: u32, color: Rgba<f32>) -> Self {
         let [x, y] = xy.into_array();
         let color = color.into_array();
-        let idx = idx.try_into().unwrap();
-        let s = size;
         Self::new(
             Vertex { pos: [ 0.5 + x + s,  0.5 + y + s], tex: [1.0, 1.0], idx, color },
             Vertex { pos: [ 0.5 + x + s, -0.5 + y    ], tex: [1.0, 0.0], idx, color },
@@ -145,15 +143,7 @@ impl Renderer {
             ],
         )?;
 
-        let texture = Texture::new(&gl, 32, 32, 6)?;
-
-        //     let grid = (0..grid_height)
-        //         .map(|x| (0..grid_width).map(move |y| (x, y)))
-        //         .flatten();
-
-        //     for (x, y) in grid {
-        //         tile_mesh.push_quad(Quad::rect(x as _, y as _, 0.0, 0));
-        //     }
+        let texture = Texture::new(&gl, Vec3::new(32, 32, 6))?;
 
         let tile_mesh = Mesh::default();
 
@@ -191,7 +181,7 @@ impl Renderer {
             gl.vertex_attrib_pointer_i32(
                 loc::TEXT_IDX,
                 1,
-                glow::INT,
+                glow::UNSIGNED_INT,
                 std::mem::size_of::<Vertex>().try_into().unwrap(),
                 offset_of!(Vertex, idx).try_into().unwrap(),
             );
@@ -228,7 +218,6 @@ impl<'a> System<'a> for Renderer {
     type SystemData = (
         Entities<'a>,
         Read<'a, GameStart>,
-        Read<'a, Frame>,
         Read<'a, Scene>,
         ReadStorage<'a, Color>,
         ReadStorage<'a, Position>,
@@ -239,8 +228,8 @@ impl<'a> System<'a> for Renderer {
     fn setup(&mut self, world: &mut World) {
         Self::SystemData::setup(world);
         let loader = world.fetch::<Loader>();
-        for (e, image) in loader.iter_images() {
-            self.texture.update_image(&self.gl, e as u32, image);
+        for (idx, image) in loader.iter_images() {
+            self.texture.update_image(&self.gl, idx.try_into().unwrap(), image);
         }
     }
 
@@ -249,7 +238,6 @@ impl<'a> System<'a> for Renderer {
         (
             entities,
             _start,
-            frame,
             scene,
             colors,
             _positions,
@@ -269,16 +257,15 @@ impl<'a> System<'a> for Renderer {
             gl.clear(glow::COLOR_BUFFER_BIT);
         }
 
-        let frame_start = Instant::now();
-        tile_mesh.clear();
+        // let frame_start = Instant::now();
 
         // TODO: this needs a way to handle changing vertices count.
         // NOTE: this could be done much more efficiently,
         // but we're not rendering thousands of tiles yet.
+        tile_mesh.clear();
         for (_, coord, text, color) in (&*entities, &coordinates, &textures, &colors).join() {
             let t = text.0.unwrap_or(0) as _;
-            let (x, y) = (coord.0.x as _, coord.0.y as _);
-            let v = Vec2::new(x, y);
+            let v = coord.0.numcast().unwrap();
             tile_mesh.push_quad(Quad::rect(v, 0.0, t, color.0));
         }
 
@@ -313,24 +300,24 @@ impl<'a> System<'a> for Renderer {
             gl.bind_vertex_array(None);
         }
 
-        let now = Instant::now();
-        let duration = now.duration_since(frame_start);
-        self.frame_duration.push(duration);
+        // let now = Instant::now();
+        // let duration = now.duration_since(frame_start);
+        // self.frame_duration.push(duration);
 
-        if frame.0 % 100 == 0 {
-            let n: u32 = self.frame_duration.len().try_into().unwrap();
-            let avg_duration = self
-                .frame_duration
-                .iter()
-                .fold(Duration::new(0, 0), |a, b| a + *b)
-                / n;
+        // if frame.0 % 100 == 0 {
+        //     let n: u32 = self.frame_duration.len().try_into().unwrap();
+        //     let avg_duration = self
+        //         .frame_duration
+        //         .iter()
+        //         .fold(Duration::new(0, 0), |a, b| a + *b)
+        //         / n;
 
-            self.frame_duration.clear();
+        //     self.frame_duration.clear();
 
-            // println!("draw ({:>3} μs)", avg_duration.as_micros());
+        //     // println!("draw ({:>3} μs)", avg_duration.as_micros());
 
-            let cursor = scene.world_cursor().round();
-            // println!("cursor ({:>3}, {:>3})", cursor.x, cursor.y);
-        }
+        //     let cursor = scene.world_cursor().round();
+        //     // println!("cursor ({:>3}, {:>3})", cursor.x, cursor.y);
+        // }
     }
 }

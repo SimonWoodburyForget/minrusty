@@ -1,7 +1,9 @@
-use std::{thread, time::Duration};
-
 use humantime::format_duration;
 use instant::Instant;
+use specs::prelude::*;
+#[cfg(feature = "nat")]
+use std::thread;
+use std::time::Duration;
 
 fn system_sleep(duration: Duration) {
     #[cfg(feature = "nat")]
@@ -65,4 +67,13 @@ impl Clock {
             // );
         }
     }
+}
+
+/// Clock system, presumably designed to be thread local.
+struct Sys;
+
+impl<'a> System<'a> for Sys {
+    type SystemData = ();
+
+    fn run(&mut self, _: ()) {}
 }

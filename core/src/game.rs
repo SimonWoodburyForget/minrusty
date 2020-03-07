@@ -134,7 +134,7 @@ pub fn play() {
 
     for i in 0..3 {
         for j in 0..3 {
-            game.create_block(i, j, content.next().unwrap(), rng.gen());
+            game.create_block(i, j, content.next().unwrap(), rng.gen_range(0.5, 0.9));
         }
     }
 
@@ -182,8 +182,6 @@ pub fn play() {
             },
 
             Event::RedrawRequested(_) => {
-                // let x = -1.0 + 0.3 * seconds.0.sin();
-                // let y = -1.0 + 0.3 * seconds.0.cos();
                 let frame = game.ecs.read_resource::<Frame>().0 + 1;
                 if frame % 100 == 0 {
                     // println!("");

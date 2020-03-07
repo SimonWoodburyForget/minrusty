@@ -110,13 +110,14 @@ impl Window {
         #[cfg(feature = "web")]
         {
             let canvas = self.window.canvas();
+            // NOTE: must query clientWidth and clientHeight in order to get screen space coordinates,
+            // as querying `self.window.inner_size()` returns the canvas size, which isn't in screen space.
             let (width, height) = (canvas.client_width(), canvas.client_height());
 
             // NOTE: prevents browser zoom factor from affecting the canvas resolution.
             let factor = self.window.scale_factor();
             let logical = LogicalSize { width, height };
             let PhysicalSize { width, height } = logical.to_physical(factor);
-            crate::logger::log(&format!("{} {}", width, height));
 
             // NOTE: canvas doesn't expect to be resized by the user, but we use CSS to
             // resize it, which doesn't fire any events, so this is required to maintain.

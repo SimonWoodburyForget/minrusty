@@ -1,12 +1,12 @@
 #version 300 es
 in vec2 vert_pos;
 in vec2 text_pos;
-in int text_idx;
+in uint text_idx;
 in vec4 vert_col;
 
 out vec2 f_text_pos;
 out vec4 frag_col;
-flat out int idx;
+flat out uint idx;
 
 uniform mat4 transform;
 
