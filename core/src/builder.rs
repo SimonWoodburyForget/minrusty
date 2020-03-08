@@ -33,7 +33,7 @@ impl<'a> System<'a> for BuilderSystem {
         if let Some(cell) = map.get(cursor) {
             if let Some(entity) = cell.tile {
                 if let Some(ref mut color) = colors.get_mut(entity) {
-                    color.0 = Rgba::new(0.0, 0.0, 0.0, 0.0);
+                    color.0 = Rgba::new(0.1, 0.1, 0.1, 0.1);
                     // TODO: drop block here?
                 }
             }

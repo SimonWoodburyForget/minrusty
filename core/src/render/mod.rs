@@ -247,6 +247,8 @@ impl<'a> System<'a> for Renderer {
 
         unsafe {
             // expected blocking operation for vsync
+            let x = 1.0;
+            gl.clear_color(x, x, x, x);
             gl.clear(glow::COLOR_BUFFER_BIT);
         }
 

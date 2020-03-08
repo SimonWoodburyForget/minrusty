@@ -63,7 +63,7 @@ impl GameState {
             .with(Name(name.into()))
             .with(Coordinate(Vec2::new(x, y)))
             .with(TextureIndex(None))
-            .with(Color(Rgba::new(red, 0.5, 0.5, 0.5)))
+            .with(Color(Rgba::new(1.0, 1.0, 1.0, 1.0)))
             .with(Tile)
             .build();
     }
