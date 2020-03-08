@@ -19,7 +19,7 @@ pub use types::*;
 pub use uniform::*;
 
 use crate::components::*;
-use crate::game::{Frame, Scene};
+use crate::game::Scene;
 use crate::loader::Loader;
 use crate::state::GameStart;
 use memory::Pod;
@@ -229,21 +229,14 @@ impl<'a> System<'a> for Renderer {
         Self::SystemData::setup(world);
         let loader = world.fetch::<Loader>();
         for (idx, image) in loader.iter_images() {
-            self.texture.update_image(&self.gl, idx.try_into().unwrap(), image);
+            self.texture
+                .update_image(&self.gl, idx.try_into().unwrap(), image);
         }
     }
 
     fn run(
         &mut self,
-        (
-            entities,
-            _start,
-            scene,
-            colors,
-            _positions,
-            coordinates,
-            textures,
-        ): Self::SystemData,
+        (entities, _start, scene, colors, _positions, coordinates, textures): Self::SystemData,
     ) {
         let Self {
             gl,

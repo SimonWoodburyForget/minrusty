@@ -9,6 +9,9 @@ use vek::*;
 #[derive(Clone, Copy)]
 enum Type {
     Texture2dArray,
+
+    /// Texture2d currently exists mainly for testing purposes.
+    #[allow(dead_code)]
     Texture2d,
 }
 
@@ -53,18 +56,32 @@ impl Texture {
             gl.active_texture(glow::TEXTURE0 + slot);
             gl.bind_texture(texture_type.into_gl(), texture_id);
 
-            gl.tex_image_3d(
-                texture_type.into_gl(),
-                level,
-                glow::RGBA as i32,
-                size.x,
-                size.y,
-                size.z,
-                border,
-                glow::RGBA,
-                glow::UNSIGNED_BYTE,
-                None,
-            );
+            match texture_type {
+                Type::Texture2dArray => gl.tex_image_3d(
+                    texture_type.into_gl(),
+                    level,
+                    glow::RGBA as i32,
+                    size.x,
+                    size.y,
+                    size.z,
+                    border,
+                    glow::RGBA,
+                    glow::UNSIGNED_BYTE,
+                    None,
+                ),
+
+                Type::Texture2d => gl.tex_image_2d(
+                    texture_type.into_gl(),
+                    level,
+                    glow::RGBA as i32,
+                    size.x,
+                    size.y,
+                    border,
+                    glow::RGBA,
+                    glow::UNSIGNED_BYTE,
+                    None,
+                ),
+            };
 
             // gl.pixel_store_i32(glow::PACK_ALIGNMENT, 1);
 
@@ -131,19 +148,33 @@ impl Texture {
         unsafe {
             self.bind(&gl);
 
-            gl.tex_sub_image_3d_u8_slice(
-                self.texture_type.into_gl(),
-                self.level,
-                pos1.x,
-                pos1.y,
-                pos1.z,
-                pos2.x,
-                pos2.y,
-                pos2.z,
-                glow::RGBA,
-                glow::UNSIGNED_BYTE,
-                Some(&raw),
-            );
+            match self.texture_type {
+                Type::Texture2dArray => gl.tex_sub_image_3d_u8_slice(
+                    self.texture_type.into_gl(),
+                    self.level,
+                    pos1.x,
+                    pos1.y,
+                    pos1.z,
+                    pos2.x,
+                    pos2.y,
+                    pos2.z,
+                    glow::RGBA,
+                    glow::UNSIGNED_BYTE,
+                    Some(&raw),
+                ),
+
+                Type::Texture2d => gl.tex_sub_image_2d_u8_slice(
+                    self.texture_type.into_gl(),
+                    self.level,
+                    pos1.x,
+                    pos1.y,
+                    pos2.x,
+                    pos2.y,
+                    glow::RGBA,
+                    glow::UNSIGNED_BYTE,
+                    Some(&raw),
+                ),
+            }
         }
     }
 

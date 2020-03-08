@@ -1,3 +1,7 @@
+#![allow(dead_code)]
+#![allow(unused_imports)]
+#![allow(unused_variables)]
+
 use humantime::format_duration;
 use instant::Instant;
 use specs::prelude::*;
