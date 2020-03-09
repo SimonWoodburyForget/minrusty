@@ -31,6 +31,7 @@ pub struct Texture {
     size: Vec3<i32>,
     slot: u32,
     level: i32,
+    border: i32,
 }
 
 impl Texture {
@@ -67,7 +68,7 @@ impl Texture {
                     border,
                     glow::RGBA,
                     glow::UNSIGNED_BYTE,
-                    None,
+                    Some(&vec![150; size.product() as usize * 4]),
                 ),
 
                 Type::Texture2d => gl.tex_image_2d(
@@ -119,6 +120,7 @@ impl Texture {
         };
 
         Ok(Self {
+            border,
             level,
             texture_id,
             size,
@@ -133,7 +135,7 @@ impl Texture {
     ///
     /// - image must be exactly the same dimensions as the texture array,
     /// - image depth must not exceed texture array depth,
-    pub fn update_image(&self, gl: &Context, depth: u32, image: &DynamicImage) {
+    pub fn update_image(&mut self, gl: &Context, depth: u32, image: &DynamicImage) {
         let rgb = image.to_rgba();
         let (width, height) = rgb.dimensions();
 
@@ -141,23 +143,23 @@ impl Texture {
         assert_eq!(raw.len(), (self.size.x * self.size.y * 4) as usize);
         assert!(self.size.z > depth.try_into().unwrap());
 
-        let pos1 = Vec3::new(0, 0, depth).numcast().unwrap();
+        let pos = Vec3::new(0, 0, depth).numcast().unwrap();
         let size = Vec3::new(width, height, 1).numcast().unwrap();
-        let pos2 = pos1 + size;
 
         unsafe {
             self.bind(&gl);
-
+            gl.pixel_store_i32(glow::UNPACK_ALIGNMENT, 1);
+            gl.pixel_store_i32(glow::PACK_ALIGNMENT, 1);
             match self.texture_type {
                 Type::Texture2dArray => gl.tex_sub_image_3d_u8_slice(
                     self.texture_type.into_gl(),
                     self.level,
-                    pos1.x,
-                    pos1.y,
-                    pos1.z,
-                    pos2.x,
-                    pos2.y,
-                    pos2.z,
+                    pos.x,
+                    pos.y,
+                    pos.z,
+                    size.x,
+                    size.y,
+                    size.z,
                     glow::RGBA,
                     glow::UNSIGNED_BYTE,
                     Some(&raw),
@@ -166,10 +168,10 @@ impl Texture {
                 Type::Texture2d => gl.tex_sub_image_2d_u8_slice(
                     self.texture_type.into_gl(),
                     self.level,
-                    pos1.x,
-                    pos1.y,
-                    pos2.x,
-                    pos2.y,
+                    pos.x,
+                    pos.y,
+                    size.x,
+                    size.y,
                     glow::RGBA,
                     glow::UNSIGNED_BYTE,
                     Some(&raw),
@@ -181,6 +183,7 @@ impl Texture {
     pub fn bind(&self, gl: &Context) {
         unsafe {
             gl.active_texture(glow::TEXTURE0 + self.slot);
+            assert!(self.texture_id.is_some());
             gl.bind_texture(self.texture_type.into_gl(), self.texture_id);
         }
     }

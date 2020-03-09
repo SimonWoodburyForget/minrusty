@@ -50,4 +50,3 @@ the `web` feature and removing the default `nat` feature.
 ```
 wasm-pack build core --target=web -- --features=web --no-default-features
 ```
-

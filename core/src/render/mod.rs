@@ -229,8 +229,7 @@ impl<'a> System<'a> for Renderer {
         Self::SystemData::setup(world);
         let loader = world.fetch::<Loader>();
         for (idx, image) in loader.iter_images() {
-            self.texture
-                .update_image(&self.gl, idx.try_into().unwrap(), image);
+            self.texture.update_image(&self.gl, idx as _, image);
         }
     }
 
