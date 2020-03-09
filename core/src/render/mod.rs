@@ -39,7 +39,7 @@ mod loc {
 }
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
+#[repr(C, packed)]
 pub struct Vertex {
     /// Position of the vertex.
     pos: [f32; 2],
