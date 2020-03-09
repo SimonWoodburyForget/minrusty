@@ -6,6 +6,9 @@ use image::DynamicImage;
 use std::convert::TryInto;
 use vek::*;
 
+/// Border in OpenGL/WebGL exists for legacy, and must always be zero.
+const BORDER: i32 = 0;
+
 #[derive(Clone, Copy)]
 enum Type {
     Texture2dArray,
@@ -31,7 +34,6 @@ pub struct Texture {
     size: Vec3<i32>,
     slot: u32,
     level: i32,
-    border: i32,
 }
 
 impl Texture {
@@ -46,7 +48,6 @@ impl Texture {
         let texture_type = Type::Texture2dArray;
         let size = size.numcast().unwrap();
         let level = 0;
-        let border = 0;
         let slot = 0;
 
         let texture_id;
@@ -65,7 +66,7 @@ impl Texture {
                     size.x,
                     size.y,
                     size.z,
-                    border,
+                    BORDER,
                     glow::RGBA,
                     glow::UNSIGNED_BYTE,
                     Some(&vec![150; size.product() as usize * 4]),
@@ -77,7 +78,7 @@ impl Texture {
                     glow::RGBA as i32,
                     size.x,
                     size.y,
-                    border,
+                    BORDER,
                     glow::RGBA,
                     glow::UNSIGNED_BYTE,
                     None,
@@ -120,7 +121,6 @@ impl Texture {
         };
 
         Ok(Self {
-            border,
             level,
             texture_id,
             size,
