@@ -13,7 +13,16 @@ An experimental game development side project.
 crate-type = ["cdylib", "rlib"]
 
 [features]
-web = ["glow/web-sys", "winit/web-sys", "web-sys", "wasm-bindgen", "instant/wasm-bindgen", "rand/wasm-bindgen"]
+web = [
+    "glow/web-sys",
+    "winit/web-sys",
+    "web-sys",
+    "wasm-bindgen",
+    "instant/wasm-bindgen",
+    "rand/wasm-bindgen",
+    "wasm-bindgen/serde-serialize"
+]
+
 nat = ["glow/glutin", "glutin", "specs/parallel"]
 
 # NOTE: native is default to prevent IDE related problems.
@@ -30,6 +39,8 @@ rand = "0.7"
 humantime = "2.0"
 tinyvec = "0.3"
 memoffset = "0.5"
+serde = { version = "1.0", features = ["derive"] }
+serde_derive = "1.0"
 
 [dependencies.specs]
 version = "0.16"

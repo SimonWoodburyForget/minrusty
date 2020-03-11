@@ -51,7 +51,7 @@ impl Component for Name {
 pub struct RenderId(pub Option<usize>);
 
 #[derive(Component, Clone, Copy, Debug)]
-pub struct TextureIndex(pub Option<usize>);
+pub struct TextureIndex(pub Option<u32>);
 
 /// Component for controlling entities.
 pub struct Controller {

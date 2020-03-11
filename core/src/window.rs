@@ -3,7 +3,9 @@ use crate::Error;
 use std::convert::TryInto;
 
 #[cfg(feature = "web")]
-use wasm_bindgen::JsCast;
+use serde::Serialize;
+#[cfg(feature = "web")]
+use wasm_bindgen::{JsCast, JsValue};
 #[cfg(feature = "web")]
 use winit::platform::web::WindowExtWebSys;
 
@@ -58,8 +60,14 @@ impl Window {
             let context = {
                 let canvas = window.canvas();
 
+                #[derive(Serialize)]
+                struct Args {
+                    alpha: bool,
+                }
+                let args = Args { alpha: false };
+                let args = JsValue::from_serde(&args).unwrap();
                 let web_gl_2 = canvas
-                    .get_context("webgl2")
+                    .get_context_with_context_options("webgl2", &args)
                     .unwrap()
                     .unwrap()
                     .dyn_into::<web_sys::WebGl2RenderingContext>()

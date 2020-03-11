@@ -126,13 +126,13 @@ pub fn play() {
     let mut rng = rand::thread_rng();
     let mut a = vec!["a"; 100];
     a.extend(["b"; 100].as_ref());
-    a.extend(["b"; 100].as_ref());
-    a.extend(["b"; 100].as_ref());
+    a.extend(["c"; 100].as_ref());
+    a.extend(["d"; 100].as_ref());
     a.shuffle(&mut rng);
     let mut content = a.iter().cycle();
 
-    for i in 0..3 {
-        for j in 0..3 {
+    for i in 0..5 {
+        for j in 0..5 {
             game.create_block(i, j, content.next().unwrap(), rng.gen_range(0.5, 0.9));
         }
     }

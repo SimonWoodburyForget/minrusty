@@ -105,7 +105,7 @@ impl<'a> System<'a> for AssetSystem {
             (&entities, &names, &self.inserted, &mut texture_indicies).join()
         {
             if let Some(index) = loader.find_name_index(&name.0) {
-                t_index.0 = Some(index as usize);
+                t_index.0 = Some(index as u32);
             }
         }
     }
